@@ -63,66 +63,76 @@ test("refreshes an existing marker in place", function()
 	assert_equal("💬 R1. new text", extmarks[1][4].virt_text[1][1])
 end)
 
-test("builds a compact prompt with comments and targets", function()
-	local prompt = require("postilla.prompt")
-	local rendered = prompt.build({
+test("builds a RevDiff context annotation from a line comment", function()
+	local revdiff = require("postilla.revdiff")
+	local rendered = revdiff.build({
 		{
 			id = "R1",
 			file = "lua/example.lua",
 			line = 10,
 			comment = "Please simplify this",
-			target = "local value = call()",
-			context_before = { "local function example()" },
-			context_after = { "end" },
+		},
+	})
+
+	assert_equal("## lua/example.lua:10 ( )\nPlease simplify this\n", rendered)
+end)
+
+test("sorts RevDiff records and formats file, line, and range annotations", function()
+	local revdiff = require("postilla.revdiff")
+	local rendered = revdiff.build({
+		{
+			file = "zeta.lua",
+			start_line = 8,
+			change_type = "-",
+			comment = "Keep this validation.",
+		},
+		{
+			file = "alpha.lua",
+			start_line = 12,
+			end_line = 18,
+			change_type = "+",
+			scope = "range",
+			comment = "Reduce the nesting.",
+		},
+		{
+			file = "alpha.lua",
+			scope = "file",
+			comment = "Split this module.",
 		},
 	})
 
 	assert_equal(
-		"Address these local review comments.\n"
+		"## alpha.lua (file-level)\n"
+			.. "Split this module.\n"
 			.. "\n"
-			.. "- R1 `lua/example.lua:10`\n"
-			.. "  Target: `local value = call()`\n"
-			.. "  Comment: Please simplify this\n"
-			.. "\n",
+			.. "## alpha.lua:12-18 (+)\n"
+			.. "Reduce the nesting.\n"
+			.. "\n"
+			.. "## zeta.lua:8 (-)\n"
+			.. "Keep this validation.\n",
 		rendered
 	)
 end)
 
-test("trims targets and escapes backticks in the compact prompt", function()
-	local prompt = require("postilla.prompt")
-	local rendered = prompt.build({
+test("preserves multiline markdown and escapes RevDiff-like body headers", function()
+	local revdiff = require("postilla.revdiff")
+	local rendered = revdiff.build({
 		{
-			id = "R1",
 			file = "lua/example.lua",
-			line = 10,
-			comment = "Use `value` here",
-			target = "\tlocal value = `call`()",
-			context_before = {},
-			context_after = {},
+			start_line = 4,
+			change_type = "+",
+			comment = "First paragraph\n## not a record\n  ## also not a record\n### safe subheading",
 		},
 	})
 
-	assert_true(rendered:find("  Target: `local value = \\`call\\`()", 1, true) ~= nil)
-	assert_true(rendered:find("  Comment: Use \\`value\\` here", 1, true) ~= nil)
-end)
-
-test("quotes multiline comments in the compact prompt", function()
-	local prompt = require("postilla.prompt")
-	local rendered = prompt.build({
-		{
-			id = "R1",
-			file = "lua/example.lua",
-			line = 10,
-			comment = "Please simplify this\nAnd keep the name",
-			target = "local value = call()",
-			context_before = {},
-			context_after = {},
-		},
-	})
-
-	assert_true(rendered:find("  Comment:", 1, true) ~= nil)
-	assert_true(rendered:find("  > Please simplify this", 1, true) ~= nil)
-	assert_true(rendered:find("  > And keep the name", 1, true) ~= nil)
+	assert_equal(
+		"## lua/example.lua:4 (+)\n"
+			.. "First paragraph\n"
+			.. " ## not a record\n"
+			.. "   ## also not a record\n"
+			.. "### safe subheading\n",
+		rendered
+	)
 end)
 
 test("serializes comments without runtime fields", function()
@@ -135,6 +145,10 @@ test("serializes comments without runtime fields", function()
 			root = "/tmp/project",
 			file = "lua/example.lua",
 			line = 3,
+			start_line = 3,
+			end_line = 5,
+			change_type = "+",
+			scope = "range",
 			target = "target",
 			context_before = { "before" },
 			context_after = { "after" },
@@ -147,6 +161,10 @@ test("serializes comments without runtime fields", function()
 	assert_equal(nil, serialized[1].extmark_id)
 	assert_equal("R1", serialized[1].id)
 	assert_equal("lua/example.lua", serialized[1].file)
+	assert_equal(3, serialized[1].start_line)
+	assert_equal(5, serialized[1].end_line)
+	assert_equal("+", serialized[1].change_type)
+	assert_equal("range", serialized[1].scope)
 end)
 
 test("stores project state outside the project root", function()
@@ -163,7 +181,7 @@ test("stores project state outside the project root", function()
 end)
 
 test("saves sessions and output below the configured state directory", function()
-	local prompt = require("postilla.prompt")
+	local revdiff = require("postilla.revdiff")
 	local session = require("postilla.session")
 	local storage = require("postilla.storage")
 	local project_root = temporary_directory("postilla-save-project")
@@ -186,7 +204,7 @@ test("saves sessions and output below the configured state directory", function(
 			},
 		},
 	})
-	local review_path, review_error = prompt.save("review output\n", project_root)
+	local review_path, review_error = revdiff.save("review output\n", project_root)
 
 	assert_true(saved)
 	assert_equal(nil, review_error)

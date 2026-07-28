@@ -8,8 +8,8 @@ Local inline review comments for AI-agent coding workflows.
 
 This plugin lets you leave review comments at the line you are reading in
 Neovim, without modifying source files and without opening a GitHub or GitLab
-review. When you are done, it generates a markdown prompt that you can paste
-into Codex or another coding agent.
+review. When you are done, it generates structured annotations that you can
+paste into Codex or another coding agent.
 
 ## Why This Exists
 
@@ -23,8 +23,8 @@ file loses the exact code location.
 1. Let an agent modify code.
 2. Review the changes in Neovim.
 3. Leave inline comments without changing source files.
-4. Export a structured prompt.
-5. Paste the prompt back into the agent.
+4. Export structured RevDiff annotations.
+5. Paste the annotations back into the agent.
 
 ## Features
 
@@ -32,7 +32,7 @@ file loses the exact code location.
 - Inline virtual text markers without modifying source files.
 - Quickfix list for collected review comments.
 - Edit and delete review comments before export.
-- Codex-ready markdown prompt copied to the clipboard.
+- RevDiff-compatible annotations copied to the clipboard.
 - Session and output backups stored under Neovim's state directory.
 - Automatic migration from the legacy `.local-review/` project directory.
 - `:help postilla` and `:checkhealth postilla` support.
@@ -59,7 +59,7 @@ project's session when it finds one.
 If Git is unavailable or the current file is outside a Git repository, paths
 fall back to Neovim's current working directory when possible.
 
-If clipboard support is unavailable, `:PostillaDone` still writes the prompt
+If clipboard support is unavailable, `:PostillaDone` still writes the output
 under Neovim's state directory.
 
 ## Installation
@@ -119,7 +119,7 @@ Inspect collected comments:
 :PostillaList
 ```
 
-Finish and copy the generated agent prompt:
+Finish and copy the generated annotations:
 
 ```vim
 :PostillaDone
@@ -159,7 +159,7 @@ Finish the review:
 
 This command:
 
-- builds a markdown prompt
+- builds RevDiff-compatible annotations
 - copies it to the `+` clipboard register
 - saves a backup under Neovim's state directory
 - removes the active session backup
@@ -171,8 +171,8 @@ Abort the review:
 :PostillaAbort
 ```
 
-This clears the in-memory session and virtual text markers without generating a
-prompt. It also removes the active session backup.
+This clears the in-memory session and virtual text markers without generating
+output. It also removes the active session backup.
 
 Check current review state:
 
@@ -236,29 +236,29 @@ require("postilla").setup({
 })
 ```
 
-## Generated Prompt
+## Annotation Output
 
-The generated prompt contains:
+The output follows RevDiff's structured annotation format:
 
-- each review comment
-- file path and line number
-- target line
+- `## path:line (type)` for a line
+- `## path:start-end (type)` for a range
+- `## path (file-level)` for a file note
 
 Example:
 
 ```markdown
-Address these local review comments.
+## lua/postilla/init.lua:42 ( )
+Please simplify this branch.
 
-- R1 `lua/postilla/init.lua:42`
-  Target: `local value = compute()`
-  Comment: Please simplify this branch.
-
-- R2 `README.md:80`
-  Target: `## Usage`
-  Comment:
-  > Tighten this section.
-  > Keep it focused on users.
+## README.md:80 ( )
+Tighten this section.
+Keep it focused on users.
 ```
+
+Postilla currently comments on normal working buffers, so exported line
+annotations use RevDiff's context type `( )`. The internal format already
+supports added `(+)`, removed `(-)`, ranges, and file-level notes for future
+diff-aware integrations.
 
 ## Session Backup
 
@@ -287,7 +287,7 @@ removes the old directory when it is empty.
 
 ## Current Limitations
 
-- The generated prompt template is not configurable yet.
+- The UI currently creates line-level context annotations only.
 - There are no integrations with diffview.nvim, fugitive, or gitsigns yet.
 
 ## License

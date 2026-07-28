@@ -19,8 +19,8 @@ shown with virtual text markers such as:
 >
   💬 R1. Consider extracting this...
 <
-When the review is done, postilla.nvim builds a markdown prompt, copies it
-to the system clipboard, and saves a backup below:
+When the review is done, postilla.nvim builds RevDiff-compatible annotations,
+copies them to the system clipboard, and saves a backup below:
 >
   stdpath("state")/postilla/projects/
 <
@@ -39,7 +39,7 @@ postilla.nvim falls back to Neovim's current working directory when building
 relative file paths.
 
 If clipboard support is unavailable, :PostillaDone still writes the generated
-prompt under Neovim's state directory.
+annotations under Neovim's state directory.
 
 ==============================================================================
 SETUP                                             *postilla-setup*
@@ -92,13 +92,14 @@ COMMANDS                                          *postilla-commands*
 
                                                         *:PostillaDone*
 :PostillaDone~
-    Generate the review prompt, copy it to the + register, write a backup below
-    Neovim's state directory, clear markers, and remove the session backup.
+    Generate RevDiff-compatible annotations, copy them to the + register, write
+    a backup below Neovim's state directory, clear markers, and remove the
+    session backup.
 
                                                         *:PostillaAbort*
 :PostillaAbort~
     Clear the current review session and remove its backup without generating
-    a prompt.
+    annotation output.
 
                                                         *:PostillaStatus*
 :PostillaStatus~
@@ -133,8 +134,12 @@ Typical flow:
   :PostillaList
   :PostillaDone
 <
-The generated prompt asks the coding agent to address every review comment,
-preserve existing style, avoid unrelated changes, and summarize the result.
+The generated output uses RevDiff record headers. Comments on normal working
+buffers are emitted as context annotations:
+>
+  ## lua/postilla/init.lua:42 ( )
+  Please simplify this branch.
+<
 
 ==============================================================================
 HEALTHCHECK                                       *postilla-health*

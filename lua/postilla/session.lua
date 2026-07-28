@@ -15,6 +15,10 @@ function M.serializable_comments(comments)
 			root = comment.root,
 			file = comment.file,
 			line = comment.line,
+			start_line = comment.start_line or comment.line,
+			end_line = comment.end_line,
+			change_type = comment.change_type or " ",
+			scope = comment.scope or "line",
 			target = comment.target,
 			context_before = comment.context_before,
 			context_after = comment.context_after,
@@ -32,7 +36,7 @@ function M.save(state)
 
 	local path = M.path(state.root)
 	local data = {
-		version = 1,
+		version = 2,
 		root = state.root,
 		next_id = state.next_id,
 		comments = M.serializable_comments(state.comments),
@@ -104,7 +108,11 @@ function M.load(root, state, restore_extmark)
 			id = saved_comment.id,
 			root = saved_comment.root or root,
 			file = saved_comment.file,
-			line = saved_comment.line,
+			line = saved_comment.start_line or saved_comment.line,
+			start_line = saved_comment.start_line or saved_comment.line,
+			end_line = saved_comment.end_line,
+			change_type = saved_comment.change_type or " ",
+			scope = saved_comment.scope or "line",
 			target = saved_comment.target,
 			context_before = saved_comment.context_before or {},
 			context_after = saved_comment.context_after or {},

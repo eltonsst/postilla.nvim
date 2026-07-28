@@ -1,6 +1,6 @@
 local location = require("postilla.location")
 local markers = require("postilla.markers")
-local prompt = require("postilla.prompt")
+local revdiff = require("postilla.revdiff")
 local session = require("postilla.session")
 local state = require("postilla.state")
 local storage = require("postilla.storage")
@@ -39,6 +39,10 @@ local function add_comment(review_location, comment_text)
 		root = review_location.root,
 		file = review_location.file,
 		line = review_location.line,
+		start_line = review_location.line,
+		end_line = nil,
+		change_type = " ",
+		scope = "line",
 		target = review_location.target,
 		context_before = review_location.context_before,
 		context_after = review_location.context_after,
@@ -129,15 +133,15 @@ function M.done()
 		return
 	end
 
-	local review_prompt = prompt.build(state.comments)
-	local saved_path, save_error = prompt.save(review_prompt, state.comments[1].root)
+	local review_output = revdiff.build(state.comments)
+	local saved_path, save_error = revdiff.save(review_output, state.comments[1].root)
 	if not saved_path then
 		vim.notify(string.format("Could not save Postilla output: %s", save_error), vim.log.levels.ERROR)
 		return
 	end
 	local comment_count = #state.comments
 
-	vim.fn.setreg("+", review_prompt)
+	vim.fn.setreg("+", review_output)
 	reset_state()
 
 	vim.notify(
