@@ -37,10 +37,6 @@ file loses the exact code location.
 - Automatic migration from the legacy `.local-review/` project directory.
 - `:help postilla` and `:checkhealth postilla` support.
 
-## Demo
-
-![postilla.nvim demo](assets/demo.png)
-
 ## Status
 
 Experimental MVP.
@@ -284,6 +280,31 @@ still exist locally. Run `:PostillaStatus` to see the exact session path.
 When Postilla finds state produced by `local-review.nvim` in
 `.local-review/`, it migrates valid files into Neovim's state directory and
 removes the old directory when it is empty.
+
+## Migrating from local-review.nvim
+
+Postilla v0.2 is a clean rename. Update the plugin specification and setup:
+
+```lua
+{
+  "eltonsst/postilla.nvim",
+  config = function()
+    require("postilla").setup()
+  end,
+}
+```
+
+Commands now use the `Postilla` prefix:
+
+```text
+LocalReviewStart   → PostillaStart
+LocalReviewComment → PostillaComment
+LocalReviewDone    → PostillaDone
+```
+
+The legacy Lua module and commands are not retained. Valid state from the old
+`.local-review/` directory is migrated automatically the first time
+`:PostillaStart` runs for that project.
 
 ## Current Limitations
 

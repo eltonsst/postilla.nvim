@@ -95,10 +95,7 @@ function M.start()
 	local root = location.project_root_for_current_buffer()
 
 	if session.load(root, state, restore_extmark) then
-		vim.notify(
-			string.format("Restored Postilla session with %d comment(s)", #state.comments),
-			vim.log.levels.INFO
-		)
+		vim.notify(string.format("Restored Postilla session with %d comment(s)", #state.comments), vim.log.levels.INFO)
 		return
 	end
 

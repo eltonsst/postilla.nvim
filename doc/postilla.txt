@@ -9,6 +9,7 @@ CONTENTS                                          *postilla-contents*
   4. Commands...............................|postilla-commands|
   5. Workflow...............................|postilla-workflow|
   6. Healthcheck............................|postilla-health|
+  7. Migration..............................|postilla-migration|
 
 ==============================================================================
 OVERVIEW                                          *postilla-overview*
@@ -154,6 +155,17 @@ The healthcheck verifies:
 - git executable availability
 - clipboard provider availability
 - Postilla state directory
+
+==============================================================================
+MIGRATION                                         *postilla-migration*
+
+postilla.nvim is the new name of local-review.nvim. Update the plugin
+specification to "eltonsst/postilla.nvim", require("postilla"), and use
+commands with the Postilla prefix.
+
+The legacy local_review module and LocalReview commands are not retained.
+Valid files under .local-review/ are migrated into Neovim's state directory
+the first time :PostillaStart runs for a project.
 
 ==============================================================================
  vim:tw=78:ts=8:noet:ft=help:norl:

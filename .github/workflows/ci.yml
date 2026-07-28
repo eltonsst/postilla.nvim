@@ -36,7 +36,7 @@ jobs:
           nvim --headless --clean \
             +'set rtp+=.' \
             +'runtime plugin/postilla.lua' \
-            +'lua require("postilla").setup({ keymap = "<leader>rc" })' \
+            +'lua require("postilla").setup({ keymap = "<leader>rc", state_dir = vim.fn.tempname() .. "-postilla-state" })' \
             +'helptags doc' \
             +'help postilla' \
             +'checkhealth postilla' \
@@ -44,3 +44,4 @@ jobs:
             +'PostillaStatus' \
             +'PostillaAbort' \
             +qa
+          test ! -e .local-review

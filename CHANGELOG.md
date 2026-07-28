@@ -1,5 +1,33 @@
 # Changelog
 
+## v0.2.0 - Unreleased
+
+Postilla rename, external state storage, and RevDiff output release.
+
+### Added
+
+- Project-scoped session and output storage below Neovim's state directory.
+- Automatic migration of valid `.local-review/session.json` and
+  `.local-review/last-review.md` files.
+- Collision-resistant project identifiers based on canonical paths.
+- RevDiff-compatible line, range, and file-level annotation formatting.
+- Session schema fields for annotation scope, ranges, and change types.
+
+### Changed
+
+- Renamed the plugin from `local-review.nvim` to `postilla.nvim`.
+- Renamed the Lua module to `postilla`, commands to the `Postilla` prefix,
+  help to `:help postilla`, and healthcheck to `:checkhealth postilla`.
+- Changed `:PostillaDone` output from a custom agent prompt to deterministic
+  RevDiff annotation records.
+- Made state writes atomic and exposed the active state path in
+  `:PostillaStatus`.
+
+### Removed
+
+- Project-root state files for new sessions.
+- The legacy `local_review` Lua module and `LocalReview` commands.
+
 ## v0.1.4 - 2026-05-05
 
 Stability refactor and compact prompt release.
