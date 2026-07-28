@@ -1,9 +1,9 @@
-local location = require("local_review.location")
-local markers = require("local_review.markers")
-local prompt = require("local_review.prompt")
-local session = require("local_review.session")
-local state = require("local_review.state")
-local ui = require("local_review.ui")
+local location = require("postilla.location")
+local markers = require("postilla.markers")
+local prompt = require("postilla.prompt")
+local session = require("postilla.session")
+local state = require("postilla.state")
+local ui = require("postilla.ui")
 
 local M = {}
 
@@ -75,13 +75,13 @@ function M.setup(opts)
 	config = vim.tbl_deep_extend("force", config, opts or {})
 
 	if config.keymap then
-		vim.keymap.set("n", config.keymap, M.comment, { desc = "Add local review comment" })
+		vim.keymap.set("n", config.keymap, M.comment, { desc = "Add Postilla comment" })
 	end
 end
 
 function M.start()
 	if state.active then
-		vim.notify("Local review session already active", vim.log.levels.INFO)
+		vim.notify("Postilla session already active", vim.log.levels.INFO)
 		return
 	end
 
@@ -90,14 +90,14 @@ function M.start()
 
 	if session.load(root, state, restore_extmark) then
 		vim.notify(
-			string.format("Restored local review session with %d comment(s)", #state.comments),
+			string.format("Restored Postilla session with %d comment(s)", #state.comments),
 			vim.log.levels.INFO
 		)
 		return
 	end
 
 	state.root = root
-	vim.notify("Local review session started", vim.log.levels.INFO)
+	vim.notify("Postilla session started", vim.log.levels.INFO)
 end
 
 function M.comment()
@@ -117,13 +117,13 @@ end
 
 function M.done()
 	if not state.active then
-		vim.notify("No active local review session", vim.log.levels.INFO)
+		vim.notify("No active Postilla session", vim.log.levels.INFO)
 		return
 	end
 
 	if #state.comments == 0 then
 		reset_state()
-		vim.notify("No local review comments to export", vim.log.levels.INFO)
+		vim.notify("No Postilla comments to export", vim.log.levels.INFO)
 		return
 	end
 
@@ -142,7 +142,7 @@ end
 
 function M.status()
 	local session_status = state.active and "active" or "inactive"
-	local message = string.format("Local review session: %s\nComments: %d", session_status, #state.comments)
+	local message = string.format("Postilla session: %s\nComments: %d", session_status, #state.comments)
 	local latest = state.comments[#state.comments]
 
 	if latest then
@@ -154,7 +154,7 @@ end
 
 function M.list()
 	if #state.comments == 0 then
-		vim.notify("No local review comments", vim.log.levels.INFO)
+		vim.notify("No Postilla comments", vim.log.levels.INFO)
 		return
 	end
 
@@ -182,7 +182,7 @@ function M.delete(id)
 	id = vim.trim(id or "")
 
 	if id == "" then
-		vim.notify("LocalReviewDelete requires a comment id, for example R1", vim.log.levels.WARN)
+		vim.notify("PostillaDelete requires a comment id, for example R1", vim.log.levels.WARN)
 		return
 	end
 
@@ -196,19 +196,19 @@ function M.delete(id)
 			else
 				save_session()
 			end
-			vim.notify(string.format("Deleted local review comment %s", id), vim.log.levels.INFO)
+			vim.notify(string.format("Deleted Postilla comment %s", id), vim.log.levels.INFO)
 			return
 		end
 	end
 
-	vim.notify(string.format("Local review comment %s not found", id), vim.log.levels.WARN)
+	vim.notify(string.format("Postilla comment %s not found", id), vim.log.levels.WARN)
 end
 
 function M.edit(id)
 	id = vim.trim(id or "")
 
 	if id == "" then
-		vim.notify("LocalReviewEdit requires a comment id, for example R1", vim.log.levels.WARN)
+		vim.notify("PostillaEdit requires a comment id, for example R1", vim.log.levels.WARN)
 		return
 	end
 
@@ -218,23 +218,23 @@ function M.edit(id)
 				comment.comment = updated_comment
 				markers.refresh(comment, state.namespace)
 				save_session()
-				vim.notify(string.format("Updated local review comment %s", id), vim.log.levels.INFO)
+				vim.notify(string.format("Updated Postilla comment %s", id), vim.log.levels.INFO)
 			end, comment.comment)
 			return
 		end
 	end
 
-	vim.notify(string.format("Local review comment %s not found", id), vim.log.levels.WARN)
+	vim.notify(string.format("Postilla comment %s not found", id), vim.log.levels.WARN)
 end
 
 function M.abort()
 	if not state.active then
-		vim.notify("No active local review session", vim.log.levels.INFO)
+		vim.notify("No active Postilla session", vim.log.levels.INFO)
 		return
 	end
 
 	reset_state()
-	vim.notify("Local review session aborted", vim.log.levels.INFO)
+	vim.notify("Postilla session aborted", vim.log.levels.INFO)
 end
 
 return M

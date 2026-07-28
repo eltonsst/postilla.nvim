@@ -1,6 +1,6 @@
-# local-review.nvim
+# postilla.nvim
 
-[![CI](https://github.com/eltonsst/local-review.nvim/actions/workflows/ci.yml/badge.svg)](https://github.com/eltonsst/local-review.nvim/actions/workflows/ci.yml)
+[![CI](https://github.com/eltonsst/postilla.nvim/actions/workflows/ci.yml/badge.svg)](https://github.com/eltonsst/postilla.nvim/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Neovim](https://img.shields.io/badge/Neovim-0.10%2B-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
 
@@ -18,7 +18,7 @@ with localized comments is still awkward. Opening a remote pull request can be
 too public or too heavy for experimental work, while writing notes in a separate
 file loses the exact code location.
 
-`local-review.nvim` keeps the review loop local:
+`postilla.nvim` keeps the review loop local:
 
 1. Let an agent modify code.
 2. Review the changes in Neovim.
@@ -35,31 +35,31 @@ file loses the exact code location.
 - Codex-ready markdown prompt copied to the clipboard.
 - Prompt backup written to `.local-review/last-review.md`.
 - Session backup and restore with `.local-review/session.json`.
-- `:help local-review` and `:checkhealth local_review` support.
+- `:help postilla` and `:checkhealth postilla` support.
 
 ## Demo
 
-![local-review.nvim demo](assets/demo.png)
+![postilla.nvim demo](assets/demo.png)
 
 ## Status
 
 Experimental MVP.
 
 The current version stores comments in memory and writes a session backup to
-`.local-review/session.json`. `:LocalReviewStart` restores that session when it
+`.local-review/session.json`. `:PostillaStart` restores that session when it
 finds one for the current project.
 
 ## Requirements
 
 - Neovim 0.10 or newer
 - Git is optional, but recommended for project-relative file paths
-- Clipboard support if you want `:LocalReviewDone` to copy to the system
+- Clipboard support if you want `:PostillaDone` to copy to the system
   clipboard
 
 If Git is unavailable or the current file is outside a Git repository, paths
 fall back to Neovim's current working directory when possible.
 
-If clipboard support is unavailable, `:LocalReviewDone` still writes the prompt
+If clipboard support is unavailable, `:PostillaDone` still writes the prompt
 backup to `.local-review/last-review.md`.
 
 ## Installation
@@ -68,9 +68,9 @@ With lazy.nvim:
 
 ```lua
 {
-  "eltonsst/local-review.nvim",
+  "eltonsst/postilla.nvim",
   config = function()
-    require("local_review").setup({
+    require("postilla").setup({
       keymap = "<leader>rc",
     })
   end,
@@ -90,20 +90,20 @@ plugin manager. If not, run:
 Then open the help page:
 
 ```vim
-:help local-review
+:help postilla
 ```
 
 You can also check local requirements:
 
 ```vim
-:checkhealth local_review
+:checkhealth postilla
 ```
 
 ## Quick Demo
 
 ```vim
-:LocalReviewStart
-:LocalReviewComment
+:PostillaStart
+:PostillaComment
 ```
 
 Write a multiline markdown comment in the floating window, then press `<C-s>`.
@@ -116,13 +116,13 @@ The reviewed line shows virtual text like:
 Inspect collected comments:
 
 ```vim
-:LocalReviewList
+:PostillaList
 ```
 
 Finish and copy the generated agent prompt:
 
 ```vim
-:LocalReviewDone
+:PostillaDone
 ```
 
 ## Usage
@@ -130,13 +130,13 @@ Finish and copy the generated agent prompt:
 Start a review session:
 
 ```vim
-:LocalReviewStart
+:PostillaStart
 ```
 
 Add a comment at the current cursor line:
 
 ```vim
-:LocalReviewComment
+:PostillaComment
 ```
 
 This opens a floating markdown buffer.
@@ -154,7 +154,7 @@ Saved comments are shown with virtual text at the reviewed line, such as:
 Finish the review:
 
 ```vim
-:LocalReviewDone
+:PostillaDone
 ```
 
 This command:
@@ -168,7 +168,7 @@ This command:
 Abort the review:
 
 ```vim
-:LocalReviewAbort
+:PostillaAbort
 ```
 
 This clears the in-memory session and virtual text markers without generating a
@@ -177,7 +177,7 @@ prompt. It also removes `.local-review/session.json`.
 Check current review state:
 
 ```vim
-:LocalReviewStatus
+:PostillaStatus
 ```
 
 This shows whether a session is active, how many comments are stored, and the
@@ -186,7 +186,7 @@ latest comment location.
 List current review comments:
 
 ```vim
-:LocalReviewList
+:PostillaList
 ```
 
 This opens the quickfix list with one item per stored comment. Press Enter on a
@@ -195,7 +195,7 @@ quickfix item to jump back to the reviewed line.
 Delete a review comment:
 
 ```vim
-:LocalReviewDelete R1
+:PostillaDelete R1
 ```
 
 This removes the stored comment and clears its virtual text marker.
@@ -203,7 +203,7 @@ This removes the stored comment and clears its virtual text marker.
 Edit a review comment:
 
 ```vim
-:LocalReviewEdit R1
+:PostillaEdit R1
 ```
 
 This reopens the floating markdown buffer with the existing comment text. Saving
@@ -214,7 +214,7 @@ updates the stored comment while keeping the same review ID and marker.
 Default configuration:
 
 ```lua
-require("local_review").setup({
+require("postilla").setup({
   context_lines = 5,
   keymap = nil,
 })
@@ -223,12 +223,12 @@ require("local_review").setup({
 Options:
 
 - `context_lines`: number of lines captured before and after the reviewed line
-- `keymap`: optional normal-mode mapping for `:LocalReviewComment`
+- `keymap`: optional normal-mode mapping for `:PostillaComment`
 
 Example:
 
 ```lua
-require("local_review").setup({
+require("postilla").setup({
   context_lines = 3,
   keymap = "<leader>rc",
 })
@@ -247,7 +247,7 @@ Example:
 ```markdown
 Address these local review comments.
 
-- R1 `lua/local_review/init.lua:42`
+- R1 `lua/postilla/init.lua:42`
   Target: `local value = compute()`
   Comment: Please simplify this branch.
 
@@ -267,12 +267,12 @@ While a review is active, comments are backed up to:
 ```
 
 The session backup is updated when comments are added, edited, or deleted. It is
-removed by `:LocalReviewDone` and `:LocalReviewAbort`.
+removed by `:PostillaDone` and `:PostillaAbort`.
 
 If Neovim closes before the review is done, reopen the project and run:
 
 ```vim
-:LocalReviewStart
+:PostillaStart
 ```
 
 The plugin restores saved comments from `.local-review/session.json` and

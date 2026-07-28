@@ -1,25 +1,25 @@
-*local-review.nvim*        Local inline code review comments
+*postilla.nvim*        Local inline code review comments
 
 ==============================================================================
-CONTENTS                                          *local-review-contents*
+CONTENTS                                          *postilla-contents*
 
-  1. Overview...............................|local-review-overview|
-  2. Requirements...........................|local-review-requirements|
-  3. Setup..................................|local-review-setup|
-  4. Commands...............................|local-review-commands|
-  5. Workflow...............................|local-review-workflow|
-  6. Healthcheck............................|local-review-health|
+  1. Overview...............................|postilla-overview|
+  2. Requirements...........................|postilla-requirements|
+  3. Setup..................................|postilla-setup|
+  4. Commands...............................|postilla-commands|
+  5. Workflow...............................|postilla-workflow|
+  6. Healthcheck............................|postilla-health|
 
 ==============================================================================
-OVERVIEW                                          *local-review-overview*
+OVERVIEW                                          *postilla-overview*
 
-local-review.nvim helps you leave local inline review comments while reviewing
+postilla.nvim helps you leave local inline review comments while reviewing
 changes made by coding agents. Comments are stored outside source files and are
 shown with virtual text markers such as:
 >
   💬 R1. Consider extracting this...
 <
-When the review is done, local-review.nvim builds a markdown prompt, copies it
+When the review is done, postilla.nvim builds a markdown prompt, copies it
 to the system clipboard, and saves a backup at:
 >
   .local-review/last-review.md
@@ -30,28 +30,28 @@ Active sessions are backed up to:
 <
 
 ==============================================================================
-REQUIREMENTS                                      *local-review-requirements*
+REQUIREMENTS                                      *postilla-requirements*
 
 - Neovim 0.10 or newer
 - Git is optional, but recommended for project-relative paths
-- Clipboard support is optional, but recommended for :LocalReviewDone
+- Clipboard support is optional, but recommended for :PostillaDone
 
 If Git is unavailable or the current file is outside a Git repository,
-local-review.nvim falls back to Neovim's current working directory when building
+postilla.nvim falls back to Neovim's current working directory when building
 relative file paths.
 
-If clipboard support is unavailable, :LocalReviewDone still writes the generated
+If clipboard support is unavailable, :PostillaDone still writes the generated
 prompt to .local-review/last-review.md.
 
 ==============================================================================
-SETUP                                             *local-review-setup*
+SETUP                                             *postilla-setup*
 
 With lazy.nvim:
 >
   {
-    "eltonsst/local-review.nvim",
+    "eltonsst/postilla.nvim",
     config = function()
-      require("local_review").setup({
+      require("postilla").setup({
         keymap = "<leader>rc",
       })
     end,
@@ -59,86 +59,86 @@ With lazy.nvim:
 <
 Default configuration:
 >
-  require("local_review").setup({
+  require("postilla").setup({
     context_lines = 5,
     keymap = nil,
   })
 <
 Options:
 
-                                                        *local-review-context_lines*
+                                                        *postilla-context_lines*
 context_lines~
     Number of lines captured before and after the reviewed line.
 
-                                                        *local-review-keymap*
+                                                        *postilla-keymap*
 keymap~
-    Optional normal-mode mapping for :LocalReviewComment.
+    Optional normal-mode mapping for :PostillaComment.
 
 ==============================================================================
-COMMANDS                                          *local-review-commands*
+COMMANDS                                          *postilla-commands*
 
-                                                        *:LocalReviewStart*
-:LocalReviewStart~
+                                                        *:PostillaStart*
+:PostillaStart~
     Start a review session. If .local-review/session.json exists for the
     current project, restore the previous session.
 
-                                                        *:LocalReviewComment*
-:LocalReviewComment~
+                                                        *:PostillaComment*
+:PostillaComment~
     Open a floating markdown window for a review comment at the current cursor
     line. Press <C-s> to save or <Esc> in normal mode to cancel.
 
-                                                        *:LocalReviewDone*
-:LocalReviewDone~
+                                                        *:PostillaDone*
+:PostillaDone~
     Generate the review prompt, copy it to the + register, write
     .local-review/last-review.md, clear markers, and remove the session backup.
 
-                                                        *:LocalReviewAbort*
-:LocalReviewAbort~
+                                                        *:PostillaAbort*
+:PostillaAbort~
     Clear the current review session and remove .local-review/session.json
     without generating a prompt.
 
-                                                        *:LocalReviewStatus*
-:LocalReviewStatus~
+                                                        *:PostillaStatus*
+:PostillaStatus~
     Show whether a session is active, how many comments are stored, and the
     latest comment location.
 
-                                                        *:LocalReviewList*
-:LocalReviewList~
+                                                        *:PostillaList*
+:PostillaList~
     Populate and open the quickfix list with one item per stored review
     comment.
 
-                                                        *:LocalReviewEdit*
-:LocalReviewEdit {id}~
+                                                        *:PostillaEdit*
+:PostillaEdit {id}~
     Reopen the floating markdown window for an existing comment, for example:
 >
-  :LocalReviewEdit R1
+  :PostillaEdit R1
 <
-                                                        *:LocalReviewDelete*
-:LocalReviewDelete {id}~
+                                                        *:PostillaDelete*
+:PostillaDelete {id}~
     Delete a stored comment and clear its virtual text marker, for example:
 >
-  :LocalReviewDelete R1
+  :PostillaDelete R1
 <
 
 ==============================================================================
-WORKFLOW                                          *local-review-workflow*
+WORKFLOW                                          *postilla-workflow*
 
 Typical flow:
 >
-  :LocalReviewStart
-  :LocalReviewComment
-  :LocalReviewList
-  :LocalReviewDone
+  :PostillaStart
+  :PostillaComment
+  :PostillaList
+  :PostillaDone
 <
 The generated prompt asks the coding agent to address every review comment,
 preserve existing style, avoid unrelated changes, and summarize the result.
 
 ==============================================================================
-HEALTHCHECK                                       *local-review-health*
+HEALTHCHECK                                       *postilla-health*
 
 Run:
 >
-  :checkhealth local_review
+  :checkhealth postilla
 <
 The healthcheck verifies:
 

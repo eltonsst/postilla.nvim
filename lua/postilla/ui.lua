@@ -44,16 +44,16 @@ function M.open_comment_window(location, on_confirm, initial_text)
 		close_window()
 
 		if comment == "" then
-			vim.notify("Local review comment cancelled: empty comment", vim.log.levels.INFO)
+			vim.notify("Postilla comment cancelled: empty comment", vim.log.levels.INFO)
 			return
 		end
 
 		on_confirm(comment)
 	end
 
-	vim.keymap.set("n", "<C-s>", confirm, { buffer = bufnr, nowait = true, desc = "Save local review comment" })
-	vim.keymap.set("i", "<C-s>", confirm, { buffer = bufnr, nowait = true, desc = "Save local review comment" })
-	vim.keymap.set("n", "<Esc>", close_window, { buffer = bufnr, nowait = true, desc = "Cancel local review comment" })
+	vim.keymap.set("n", "<C-s>", confirm, { buffer = bufnr, nowait = true, desc = "Save Postilla comment" })
+	vim.keymap.set("i", "<C-s>", confirm, { buffer = bufnr, nowait = true, desc = "Save Postilla comment" })
+	vim.keymap.set("n", "<Esc>", close_window, { buffer = bufnr, nowait = true, desc = "Cancel Postilla comment" })
 
 	vim.api.nvim_win_set_cursor(winid, { vim.api.nvim_buf_line_count(bufnr), 0 })
 	vim.cmd.startinsert()

@@ -1,4 +1,4 @@
-local paths = require("local_review.paths")
+local paths = require("postilla.paths")
 
 local M = {}
 

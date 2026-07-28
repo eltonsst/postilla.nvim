@@ -35,12 +35,12 @@ jobs:
         run: |
           nvim --headless --clean \
             +'set rtp+=.' \
-            +'runtime plugin/local-review.lua' \
-            +'lua require("local_review").setup({ keymap = "<leader>rc" })' \
+            +'runtime plugin/postilla.lua' \
+            +'lua require("postilla").setup({ keymap = "<leader>rc" })' \
             +'helptags doc' \
-            +'help local-review' \
-            +'checkhealth local_review' \
-            +'LocalReviewStart' \
-            +'LocalReviewStatus' \
-            +'LocalReviewAbort' \
+            +'help postilla' \
+            +'checkhealth postilla' \
+            +'PostillaStart' \
+            +'PostillaStatus' \
+            +'PostillaAbort' \
             +qa

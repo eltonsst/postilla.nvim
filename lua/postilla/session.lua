@@ -75,7 +75,7 @@ function M.load(root, state, restore_extmark)
 	local ok, data = pcall(vim.json.decode, table.concat(lines, "\n"))
 
 	if not ok or type(data) ~= "table" or type(data.comments) ~= "table" then
-		vim.notify("Could not restore local review session: invalid session file", vim.log.levels.WARN)
+		vim.notify("Could not restore Postilla session: invalid session file", vim.log.levels.WARN)
 		return false
 	end
 

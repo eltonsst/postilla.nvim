@@ -21,22 +21,22 @@ local function assert_true(value, message)
 end
 
 test("formats virtual text with a compact preview", function()
-	local markers = require("local_review.markers")
+	local markers = require("postilla.markers")
 	local label = markers.format_virt_text("R1", "> Consider extracting this helper because it is long")
 
 	assert_equal("💬 R1. Consider extracting this helpe...", label)
 end)
 
 test("formats multiline virtual text with an ellipsis", function()
-	local markers = require("local_review.markers")
+	local markers = require("postilla.markers")
 	local label = markers.format_virt_text("R2", "First line\nSecond line")
 
 	assert_equal("💬 R2. First line...", label)
 end)
 
 test("refreshes an existing marker in place", function()
-	local markers = require("local_review.markers")
-	local namespace = vim.api.nvim_create_namespace("local-review-test")
+	local markers = require("postilla.markers")
+	local namespace = vim.api.nvim_create_namespace("postilla-test")
 	local bufnr = vim.api.nvim_create_buf(false, true)
 	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "target" })
 
@@ -58,7 +58,7 @@ test("refreshes an existing marker in place", function()
 end)
 
 test("builds a compact prompt with comments and targets", function()
-	local prompt = require("local_review.prompt")
+	local prompt = require("postilla.prompt")
 	local rendered = prompt.build({
 		{
 			id = "R1",
@@ -83,7 +83,7 @@ test("builds a compact prompt with comments and targets", function()
 end)
 
 test("trims targets and escapes backticks in the compact prompt", function()
-	local prompt = require("local_review.prompt")
+	local prompt = require("postilla.prompt")
 	local rendered = prompt.build({
 		{
 			id = "R1",
@@ -101,7 +101,7 @@ test("trims targets and escapes backticks in the compact prompt", function()
 end)
 
 test("quotes multiline comments in the compact prompt", function()
-	local prompt = require("local_review.prompt")
+	local prompt = require("postilla.prompt")
 	local rendered = prompt.build({
 		{
 			id = "R1",
@@ -120,7 +120,7 @@ test("quotes multiline comments in the compact prompt", function()
 end)
 
 test("serializes comments without runtime fields", function()
-	local session = require("local_review.session")
+	local session = require("postilla.session")
 	local serialized = session.serializable_comments({
 		{
 			id = "R1",
@@ -144,8 +144,8 @@ test("serializes comments without runtime fields", function()
 end)
 
 test("returns project-relative paths", function()
-	local paths = require("local_review.paths")
-	local root = vim.fs.normalize("/tmp/local-review-root")
+	local paths = require("postilla.paths")
+	local root = vim.fs.normalize("/tmp/postilla-root")
 	local file = vim.fs.joinpath(root, "lua", "example.lua")
 
 	assert_equal("lua/example.lua", paths.relative_path(root, file))
@@ -168,4 +168,4 @@ if #failures > 0 then
 	vim.cmd.cquit(1)
 end
 
-print(string.format("local-review.nvim tests: %d passed", #tests))
+print(string.format("postilla.nvim tests: %d passed", #tests))

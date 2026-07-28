@@ -3,6 +3,6 @@ return {
 	comments = {},
 	buffers = {},
 	next_id = 1,
-	namespace = vim.api.nvim_create_namespace("local-review"),
+	namespace = vim.api.nvim_create_namespace("postilla"),
 	root = nil,
 }
