@@ -3,6 +3,7 @@ local markers = require("postilla.markers")
 local prompt = require("postilla.prompt")
 local session = require("postilla.session")
 local state = require("postilla.state")
+local storage = require("postilla.storage")
 local ui = require("postilla.ui")
 
 local M = {}
@@ -73,6 +74,7 @@ end
 
 function M.setup(opts)
 	config = vim.tbl_deep_extend("force", config, opts or {})
+	storage.setup({ state_dir = config.state_dir })
 
 	if config.keymap then
 		vim.keymap.set("n", config.keymap, M.comment, { desc = "Add Postilla comment" })
@@ -128,7 +130,11 @@ function M.done()
 	end
 
 	local review_prompt = prompt.build(state.comments)
-	local saved_path = prompt.save(review_prompt, state.comments[1].root)
+	local saved_path, save_error = prompt.save(review_prompt, state.comments[1].root)
+	if not saved_path then
+		vim.notify(string.format("Could not save Postilla output: %s", save_error), vim.log.levels.ERROR)
+		return
+	end
 	local comment_count = #state.comments
 
 	vim.fn.setreg("+", review_prompt)
@@ -143,6 +149,7 @@ end
 function M.status()
 	local session_status = state.active and "active" or "inactive"
 	local message = string.format("Postilla session: %s\nComments: %d", session_status, #state.comments)
+	message = message .. string.format("\nState: %s", state.root and session.path(state.root) or storage.root())
 	local latest = state.comments[#state.comments]
 
 	if latest then

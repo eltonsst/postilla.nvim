@@ -1,3 +1,5 @@
+local storage = require("postilla.storage")
+
 local M = {}
 
 local function has_clipboard()
@@ -25,10 +27,12 @@ function M.check()
 		vim.health.ok("clipboard provider available")
 	else
 		vim.health.warn("clipboard provider not available", {
-			":PostillaDone writes the prompt to .local-review/last-review.md even when clipboard copy is unavailable.",
+			string.format(":PostillaDone still writes the output below %s", storage.root()),
 			"Run :checkhealth provider.clipboard for system clipboard setup details.",
 		})
 	end
+
+	vim.health.ok(string.format("State directory: %s", storage.root()))
 end
 
 return M

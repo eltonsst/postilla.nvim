@@ -20,14 +20,12 @@ shown with virtual text markers such as:
   💬 R1. Consider extracting this...
 <
 When the review is done, postilla.nvim builds a markdown prompt, copies it
-to the system clipboard, and saves a backup at:
+to the system clipboard, and saves a backup below:
 >
-  .local-review/last-review.md
+  stdpath("state")/postilla/projects/
 <
-Active sessions are backed up to:
->
-  .local-review/session.json
-<
+Each project gets a separate directory. Use :PostillaStatus to show the exact
+active session path.
 
 ==============================================================================
 REQUIREMENTS                                      *postilla-requirements*
@@ -41,7 +39,7 @@ postilla.nvim falls back to Neovim's current working directory when building
 relative file paths.
 
 If clipboard support is unavailable, :PostillaDone still writes the generated
-prompt to .local-review/last-review.md.
+prompt under Neovim's state directory.
 
 ==============================================================================
 SETUP                                             *postilla-setup*
@@ -62,6 +60,7 @@ Default configuration:
   require("postilla").setup({
     context_lines = 5,
     keymap = nil,
+    state_dir = nil,
   })
 <
 Options:
@@ -74,13 +73,17 @@ context_lines~
 keymap~
     Optional normal-mode mapping for :PostillaComment.
 
+                                                        *postilla-state_dir*
+state_dir~
+    Optional override for Postilla's Neovim state directory.
+
 ==============================================================================
 COMMANDS                                          *postilla-commands*
 
                                                         *:PostillaStart*
 :PostillaStart~
-    Start a review session. If .local-review/session.json exists for the
-    current project, restore the previous session.
+    Start a review session. If saved state exists for the current project,
+    restore the previous session. Legacy .local-review state is migrated.
 
                                                         *:PostillaComment*
 :PostillaComment~
@@ -89,18 +92,18 @@ COMMANDS                                          *postilla-commands*
 
                                                         *:PostillaDone*
 :PostillaDone~
-    Generate the review prompt, copy it to the + register, write
-    .local-review/last-review.md, clear markers, and remove the session backup.
+    Generate the review prompt, copy it to the + register, write a backup below
+    Neovim's state directory, clear markers, and remove the session backup.
 
                                                         *:PostillaAbort*
 :PostillaAbort~
-    Clear the current review session and remove .local-review/session.json
-    without generating a prompt.
+    Clear the current review session and remove its backup without generating
+    a prompt.
 
                                                         *:PostillaStatus*
 :PostillaStatus~
     Show whether a session is active, how many comments are stored, and the
-    latest comment location.
+    latest comment location and state path.
 
                                                         *:PostillaList*
 :PostillaList~
@@ -145,6 +148,7 @@ The healthcheck verifies:
 - Neovim 0.10+
 - git executable availability
 - clipboard provider availability
+- Postilla state directory
 
 ==============================================================================
  vim:tw=78:ts=8:noet:ft=help:norl:

@@ -1,7 +1,9 @@
+local storage = require("postilla.storage")
+
 local M = {}
 
-function M.path(root)
-	return vim.fs.joinpath(root or vim.fn.getcwd(), ".local-review", "session.json")
+function M.path(root, state_root)
+	return storage.session_path(root, state_root)
 end
 
 function M.serializable_comments(comments)
@@ -31,12 +33,17 @@ function M.save(state)
 	local path = M.path(state.root)
 	local data = {
 		version = 1,
+		root = state.root,
 		next_id = state.next_id,
 		comments = M.serializable_comments(state.comments),
 	}
 
-	vim.fn.mkdir(vim.fs.dirname(path), "p")
-	vim.fn.writefile({ vim.json.encode(data) }, path)
+	local saved, save_error = storage.write_json(path, data)
+	if not saved then
+		vim.notify(string.format("Could not save Postilla session: %s", save_error), vim.log.levels.ERROR)
+	end
+
+	return saved
 end
 
 function M.delete(root)
@@ -65,6 +72,14 @@ function M.buffer_for_file(root, file)
 end
 
 function M.load(root, state, restore_extmark)
+	local migration, migration_error = storage.migrate_legacy(root)
+	if migration_error then
+		vim.notify(string.format("Postilla state migration warning: %s", migration_error), vim.log.levels.WARN)
+	end
+	if migration.migrated then
+		vim.notify(string.format("Migrated legacy review state to %s", storage.project_dir(root)), vim.log.levels.INFO)
+	end
+
 	local path = M.path(root)
 
 	if vim.fn.filereadable(path) ~= 1 then

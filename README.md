@@ -33,8 +33,8 @@ file loses the exact code location.
 - Quickfix list for collected review comments.
 - Edit and delete review comments before export.
 - Codex-ready markdown prompt copied to the clipboard.
-- Prompt backup written to `.local-review/last-review.md`.
-- Session backup and restore with `.local-review/session.json`.
+- Session and output backups stored under Neovim's state directory.
+- Automatic migration from the legacy `.local-review/` project directory.
 - `:help postilla` and `:checkhealth postilla` support.
 
 ## Demo
@@ -45,9 +45,9 @@ file loses the exact code location.
 
 Experimental MVP.
 
-The current version stores comments in memory and writes a session backup to
-`.local-review/session.json`. `:PostillaStart` restores that session when it
-finds one for the current project.
+The current version stores comments in memory and writes project-scoped backups
+under `stdpath("state")/postilla`. `:PostillaStart` restores the current
+project's session when it finds one.
 
 ## Requirements
 
@@ -60,7 +60,7 @@ If Git is unavailable or the current file is outside a Git repository, paths
 fall back to Neovim's current working directory when possible.
 
 If clipboard support is unavailable, `:PostillaDone` still writes the prompt
-backup to `.local-review/last-review.md`.
+under Neovim's state directory.
 
 ## Installation
 
@@ -161,8 +161,8 @@ This command:
 
 - builds a markdown prompt
 - copies it to the `+` clipboard register
-- saves a backup to `.local-review/last-review.md`
-- removes `.local-review/session.json`
+- saves a backup under Neovim's state directory
+- removes the active session backup
 - clears the in-memory session and virtual text markers
 
 Abort the review:
@@ -172,7 +172,7 @@ Abort the review:
 ```
 
 This clears the in-memory session and virtual text markers without generating a
-prompt. It also removes `.local-review/session.json`.
+prompt. It also removes the active session backup.
 
 Check current review state:
 
@@ -180,8 +180,8 @@ Check current review state:
 :PostillaStatus
 ```
 
-This shows whether a session is active, how many comments are stored, and the
-latest comment location.
+This shows whether a session is active, how many comments are stored, the
+latest comment location, and the state path.
 
 List current review comments:
 
@@ -217,6 +217,7 @@ Default configuration:
 require("postilla").setup({
   context_lines = 5,
   keymap = nil,
+  state_dir = nil,
 })
 ```
 
@@ -224,6 +225,7 @@ Options:
 
 - `context_lines`: number of lines captured before and after the reviewed line
 - `keymap`: optional normal-mode mapping for `:PostillaComment`
+- `state_dir`: optional override for Postilla's Neovim state directory
 
 Example:
 
@@ -260,10 +262,11 @@ Address these local review comments.
 
 ## Session Backup
 
-While a review is active, comments are backed up to:
+While a review is active, comments are stored in a project-specific directory
+below:
 
 ```text
-.local-review/session.json
+stdpath("state")/postilla/projects/
 ```
 
 The session backup is updated when comments are added, edited, or deleted. It is
@@ -275,8 +278,12 @@ If Neovim closes before the review is done, reopen the project and run:
 :PostillaStart
 ```
 
-The plugin restores saved comments from `.local-review/session.json` and
-recreates markers for files that still exist locally.
+The plugin restores the saved comments and recreates markers for files that
+still exist locally. Run `:PostillaStatus` to see the exact session path.
+
+When Postilla finds state produced by `local-review.nvim` in
+`.local-review/`, it migrates valid files into Neovim's state directory and
+removes the old directory when it is empty.
 
 ## Current Limitations
 

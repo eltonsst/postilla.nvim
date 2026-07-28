@@ -1,3 +1,5 @@
+local storage = require("postilla.storage")
+
 local M = {}
 
 local function inline_code(text)
@@ -31,11 +33,12 @@ function M.build(comments)
 end
 
 function M.save(review_prompt, root)
-	local dir = vim.fs.joinpath(root or vim.fn.getcwd(), ".local-review")
-	local path = vim.fs.joinpath(dir, "last-review.md")
+	local path = storage.last_review_path(root)
+	local saved, save_error = storage.write(path, review_prompt)
 
-	vim.fn.mkdir(dir, "p")
-	vim.fn.writefile(vim.split(review_prompt, "\n", { plain = true }), path)
+	if not saved then
+		return nil, save_error
+	end
 
 	return path
 end
