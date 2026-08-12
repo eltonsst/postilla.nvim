@@ -63,6 +63,33 @@ test("refreshes an existing marker in place", function()
 	assert_equal("💬 R1. new text", extmarks[1][4].virt_text[1][1])
 end)
 
+test("returns to Normal mode after saving a comment", function()
+	local ui = require("postilla.ui")
+	local original_win = vim.api.nvim_get_current_win()
+	local saved_comment
+
+	ui.open_comment_window({ file = "lua/example.lua", line = 3 }, function(comment)
+		saved_comment = comment
+	end)
+	vim.api.nvim_buf_set_lines(0, 0, -1, false, { "Please simplify this" })
+
+	local save_mapping = vim.fn.maparg("<C-s>", "i", false, true)
+	local original_stopinsert = vim.cmd.stopinsert
+	local stopped_insert = false
+	vim.cmd.stopinsert = function()
+		stopped_insert = true
+		original_stopinsert()
+	end
+
+	local ok, err = pcall(save_mapping.callback)
+	vim.cmd.stopinsert = original_stopinsert
+
+	assert_true(ok, err)
+	assert_true(stopped_insert, "saving did not leave Insert mode")
+	assert_equal(original_win, vim.api.nvim_get_current_win())
+	assert_equal("Please simplify this", saved_comment)
+end)
+
 test("builds a RevDiff context annotation from a line comment", function()
 	local revdiff = require("postilla.revdiff")
 	local rendered = revdiff.build({

@@ -38,6 +38,11 @@ function M.open_comment_window(location, on_confirm, initial_text)
 	end
 
 	local function confirm()
+		-- An insert-mode mapping keeps Neovim in Insert mode even after its
+		-- floating window is closed. Leave Insert mode before returning focus to
+		-- the reviewed buffer so saving completes the comment interaction.
+		vim.cmd.stopinsert()
+
 		local lines = vim.api.nvim_buf_get_lines(bufnr, 0, -1, false)
 		local comment = vim.trim(table.concat(lines, "\n"))
 
