@@ -1,6 +1,6 @@
 # Changelog
 
-## v0.2.0 - Unreleased
+## v0.2.0 - 2026-08-12
 
 Postilla rename, external state storage, and RevDiff output release.
 
