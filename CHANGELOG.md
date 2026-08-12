@@ -12,6 +12,8 @@ Postilla rename, external state storage, and RevDiff output release.
 - Collision-resistant project identifiers based on canonical paths.
 - RevDiff-compatible line, range, and file-level annotation formatting.
 - Session schema fields for annotation scope, ranges, and change types.
+- Bottom-split comment editor that keeps the reviewed source visible, with the
+  previous floating layout available through configuration.
 
 ### Changed
 
@@ -22,6 +24,7 @@ Postilla rename, external state storage, and RevDiff output release.
   RevDiff annotation records.
 - Made state writes atomic and exposed the active state path in
   `:PostillaStatus`.
+- Saving a comment now returns focus to the reviewed buffer in Normal mode.
 
 ### Removed
 

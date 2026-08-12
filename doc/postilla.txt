@@ -62,6 +62,11 @@ Default configuration:
     context_lines = 5,
     keymap = nil,
     state_dir = nil,
+    comment_window = {
+      layout = "bottom",
+      height = 10,
+      width = 80,
+    },
   })
 <
 Options:
@@ -78,6 +83,12 @@ keymap~
 state_dir~
     Optional override for Postilla's Neovim state directory.
 
+						*postilla-comment_window*
+comment_window~
+    Configures the comment editor. layout accepts "bottom" (the default) or
+    "float". height controls the split or floating-window height. width is
+    used by the floating layout.
+
 ==============================================================================
 COMMANDS                                          *postilla-commands*
 
@@ -88,8 +99,9 @@ COMMANDS                                          *postilla-commands*
 
                                                         *:PostillaComment*
 :PostillaComment~
-    Open a floating markdown window for a review comment at the current cursor
-    line. Press <C-s> to save or <Esc> in normal mode to cancel.
+    Open a markdown scratch buffer for a review comment at the current cursor
+    line. By default it uses a bottom split so the reviewed code stays visible.
+    Press <C-s> to save or <Esc> in normal mode to cancel.
 
                                                         *:PostillaDone*
 :PostillaDone~
@@ -114,7 +126,7 @@ COMMANDS                                          *postilla-commands*
 
                                                         *:PostillaEdit*
 :PostillaEdit {id}~
-    Reopen the floating markdown window for an existing comment, for example:
+    Reopen the markdown comment editor for an existing comment, for example:
 >
   :PostillaEdit R1
 <

@@ -28,7 +28,8 @@ file loses the exact code location.
 
 ## Features
 
-- Floating multiline markdown comment window.
+- Bottom-split multiline Markdown editor that keeps reviewed code visible.
+- Optional floating comment editor layout.
 - Inline virtual text markers without modifying source files.
 - Quickfix list for collected review comments.
 - Edit and delete review comments before export.
@@ -68,6 +69,10 @@ With lazy.nvim:
   config = function()
     require("postilla").setup({
       keymap = "<leader>rc",
+      comment_window = {
+        layout = "bottom",
+        height = 10,
+      },
     })
   end,
 }
@@ -102,7 +107,7 @@ You can also check local requirements:
 :PostillaComment
 ```
 
-Write a multiline markdown comment in the floating window, then press `<C-s>`.
+Write a multiline Markdown comment in the bottom split, then press `<C-s>`.
 The reviewed line shows virtual text like:
 
 ```text
@@ -135,11 +140,24 @@ Add a comment at the current cursor line:
 :PostillaComment
 ```
 
-This opens a floating markdown buffer.
+This opens a Markdown scratch buffer in a bottom split, keeping the reviewed
+code visible above it. The reviewed line is highlighted while you write.
 
 - Write your review comment.
 - Press `<C-s>` to save it.
 - Press `<Esc>` in normal mode to cancel.
+
+To retain the original centered floating editor instead:
+
+```lua
+require("postilla").setup({
+  comment_window = {
+    layout = "float",
+    height = 12,
+    width = 80,
+  },
+})
+```
 
 Saved comments are shown with virtual text at the reviewed line, such as:
 

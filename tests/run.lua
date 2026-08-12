@@ -66,11 +66,25 @@ end)
 test("returns to Normal mode after saving a comment", function()
 	local ui = require("postilla.ui")
 	local original_win = vim.api.nvim_get_current_win()
+	local original_buf = vim.api.nvim_get_current_buf()
 	local saved_comment
 
-	ui.open_comment_window({ file = "lua/example.lua", line = 3 }, function(comment)
+	vim.bo[original_buf].swapfile = false
+	vim.api.nvim_buf_set_lines(original_buf, 0, -1, false, { "one", "two", "three", "four" })
+	vim.bo[original_buf].modified = false
+	vim.api.nvim_win_set_cursor(original_win, { 3, 0 })
+	local original_view = vim.api.nvim_win_call(original_win, vim.fn.winsaveview)
+	local original_matches = vim.api.nvim_win_call(original_win, vim.fn.getmatches)
+
+	ui.open_comment_window({ file = "lua/example.lua", line = 3, bufnr = original_buf }, function(comment)
 		saved_comment = comment
 	end)
+	local comment_win = vim.api.nvim_get_current_win()
+	assert_true(comment_win ~= original_win, "comment editor did not open in a separate window")
+	assert_equal("", vim.api.nvim_win_get_config(comment_win).relative)
+	assert_true(vim.wo[comment_win].winfixheight, "comment split height is not fixed")
+	local highlighted_matches = vim.api.nvim_win_call(original_win, vim.fn.getmatches)
+	assert_equal(#original_matches + 1, #highlighted_matches)
 	vim.api.nvim_buf_set_lines(0, 0, -1, false, { "Please simplify this" })
 
 	local save_mapping = vim.fn.maparg("<C-s>", "i", false, true)
@@ -87,7 +101,30 @@ test("returns to Normal mode after saving a comment", function()
 	assert_true(ok, err)
 	assert_true(stopped_insert, "saving did not leave Insert mode")
 	assert_equal(original_win, vim.api.nvim_get_current_win())
+	local restored_view = vim.api.nvim_win_call(original_win, vim.fn.winsaveview)
+	assert_equal(original_view.lnum, restored_view.lnum)
+	assert_equal(original_view.topline, restored_view.topline)
+	local restored_matches = vim.api.nvim_win_call(original_win, vim.fn.getmatches)
+	assert_equal(#original_matches, #restored_matches)
 	assert_equal("Please simplify this", saved_comment)
+end)
+
+test("supports the legacy floating comment editor layout", function()
+	local ui = require("postilla.ui")
+	local original_win = vim.api.nvim_get_current_win()
+	local original_buf = vim.api.nvim_get_current_buf()
+
+	ui.open_comment_window({ file = "lua/example.lua", line = 1, bufnr = original_buf }, function() end, nil, {
+		layout = "float",
+		height = 6,
+		width = 40,
+	})
+	local comment_win = vim.api.nvim_get_current_win()
+	assert_equal("editor", vim.api.nvim_win_get_config(comment_win).relative)
+
+	local cancel_mapping = vim.fn.maparg("<Esc>", "n", false, true)
+	cancel_mapping.callback()
+	assert_equal(original_win, vim.api.nvim_get_current_win())
 end)
 
 test("builds a RevDiff context annotation from a line comment", function()

@@ -11,6 +11,11 @@ local M = {}
 local config = {
 	context_lines = 5,
 	keymap = nil,
+	comment_window = {
+		layout = "bottom",
+		height = 10,
+		width = 80,
+	},
 }
 
 local function next_comment_id()
@@ -115,7 +120,7 @@ function M.comment()
 			string.format("Stored review comment %s for %s:%d", stored.id, stored.file, stored.line),
 			vim.log.levels.INFO
 		)
-	end)
+	end, nil, config.comment_window)
 end
 
 function M.done()
@@ -227,7 +232,7 @@ function M.edit(id)
 				markers.refresh(comment, state.namespace)
 				save_session()
 				vim.notify(string.format("Updated Postilla comment %s", id), vim.log.levels.INFO)
-			end, comment.comment)
+			end, comment.comment, config.comment_window)
 			return
 		end
 	end
