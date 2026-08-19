@@ -1,6 +1,6 @@
 local M = {}
 
-function M.format_virt_text(id, comment_text)
+function M.format_virt_text(id, comment_text, start_line, end_line)
 	local lines = vim.split(comment_text, "\n", { plain = true })
 	local first_line = vim.trim(lines[1] or "")
 
@@ -21,7 +21,12 @@ function M.format_virt_text(id, comment_text)
 		preview = preview .. "..."
 	end
 
-	return "💬 " .. id .. ". " .. preview
+	local range = ""
+	if end_line and start_line and end_line > start_line then
+		range = string.format(" [%d-%d]", start_line, end_line)
+	end
+
+	return "💬 " .. id .. range .. ". " .. preview
 end
 
 function M.place(comment, namespace)
@@ -30,8 +35,9 @@ function M.place(comment, namespace)
 	end
 
 	local line_count = vim.api.nvim_buf_line_count(comment.bufnr)
-	local marker_line = math.min(math.max(comment.line, 1), line_count)
-	local virt_text_label = M.format_virt_text(comment.id, comment.comment)
+	local marker_line = math.min(math.max(comment.end_line or comment.start_line or comment.line, 1), line_count)
+	local virt_text_label =
+		M.format_virt_text(comment.id, comment.comment, comment.start_line or comment.line, comment.end_line)
 
 	return vim.api.nvim_buf_set_extmark(comment.bufnr, namespace, marker_line - 1, 0, {
 		virt_text = { { virt_text_label, "DiagnosticInfo" } },

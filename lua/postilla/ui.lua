@@ -1,5 +1,13 @@
 local M = {}
 
+local function location_label(location)
+	local first_line = location.start_line or location.line
+	if location.end_line and location.end_line > first_line then
+		return string.format("%s:%d-%d", location.file, first_line, location.end_line)
+	end
+	return string.format("%s:%d", location.file, first_line)
+end
+
 local function create_comment_buffer(initial_text)
 	local bufnr = vim.api.nvim_create_buf(false, true)
 	vim.bo[bufnr].buftype = "nofile"
@@ -28,7 +36,7 @@ local function open_float(bufnr, location, options)
 		col = col,
 		style = "minimal",
 		border = "rounded",
-		title = string.format(" Review %s:%d ", location.file, location.line),
+		title = string.format(" Review %s ", location_label(location)),
 		title_pos = "center",
 	})
 end
@@ -42,7 +50,7 @@ local function open_bottom_split(bufnr, location, options)
 	vim.api.nvim_win_set_buf(winid, bufnr)
 	vim.api.nvim_win_set_height(winid, height)
 	vim.wo[winid].winfixheight = true
-	vim.wo[winid].winbar = vim.fn.escape(string.format(" Postilla · %s:%d ", location.file, location.line), "%")
+	vim.wo[winid].winbar = vim.fn.escape(string.format(" Postilla · %s ", location_label(location)), "%")
 
 	return winid
 end
@@ -53,12 +61,14 @@ local function source_highlight(source_winid, location)
 	end
 
 	local line_count = vim.api.nvim_buf_line_count(location.bufnr)
-	local line = math.min(math.max(location.line, 1), line_count)
+	local first_line = math.min(math.max(location.start_line or location.line, 1), line_count)
+	local last_line = math.min(math.max(location.end_line or first_line, first_line), line_count)
+	local range_pattern = string.format("\\%%>%dl\\%%<%dl.*", first_line - 1, last_line + 1)
 
 	return vim.api.nvim_win_call(source_winid, function()
-		vim.api.nvim_win_set_cursor(source_winid, { line, 0 })
+		vim.api.nvim_win_set_cursor(source_winid, { first_line, 0 })
 		vim.cmd("normal! zz")
-		return vim.fn.matchaddpos("Visual", { { line } }, 10)
+		return vim.fn.matchadd("Visual", range_pattern, 10)
 	end)
 end
 

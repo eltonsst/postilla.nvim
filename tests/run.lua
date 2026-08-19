@@ -40,6 +40,13 @@ test("formats multiline virtual text with an ellipsis", function()
 	assert_equal("💬 R2. First line...", label)
 end)
 
+test("includes the selected range in virtual text", function()
+	local markers = require("postilla.markers")
+	local label = markers.format_virt_text("R3", "Review this block", 4, 7)
+
+	assert_equal("💬 R3 [4-7]. Review this block", label)
+end)
+
 test("refreshes an existing marker in place", function()
 	local markers = require("postilla.markers")
 	local namespace = vim.api.nvim_create_namespace("postilla-test")
@@ -61,6 +68,134 @@ test("refreshes an existing marker in place", function()
 	assert_equal(1, #extmarks)
 	assert_equal(comment.extmark_id, extmarks[1][1])
 	assert_equal("💬 R1. new text", extmarks[1][4].virt_text[1][1])
+end)
+
+test("places a range comment marker on the final selected line", function()
+	local markers = require("postilla.markers")
+	local namespace = vim.api.nvim_create_namespace("postilla-range-marker-test")
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "one", "two", "three", "four", "five" })
+
+	markers.place({
+		id = "R1",
+		bufnr = bufnr,
+		line = 2,
+		start_line = 2,
+		end_line = 4,
+		comment = "Review this block",
+	}, namespace)
+
+	local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, namespace, 0, -1, { details = true })
+	assert_equal(1, #extmarks)
+	assert_equal(3, extmarks[1][2])
+	assert_equal("💬 R1 [2-4]. Review this block", extmarks[1][4].virt_text[1][1])
+end)
+
+test("captures a normalized line range with surrounding context", function()
+	local location = require("postilla.location")
+	local original_buf = vim.api.nvim_get_current_buf()
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_set_current_buf(bufnr)
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "one", "two", "three", "four", "five", "six" })
+
+	local captured = location.capture(1, 5, 3)
+
+	assert_equal(3, captured.line)
+	assert_equal(3, captured.start_line)
+	assert_equal(5, captured.end_line)
+	assert_equal("range", captured.scope)
+	assert_equal("three\nfour\nfive", captured.target)
+	assert_equal("two", captured.context_before[1])
+	assert_equal("six", captured.context_after[1])
+
+	vim.api.nvim_set_current_buf(original_buf)
+	vim.api.nvim_buf_delete(bufnr, { force = true })
+end)
+
+test("registers the configured comment keymap in Normal and Visual modes", function()
+	local postilla = require("postilla")
+	local keymap = "<leader>rC"
+	local original_comment = postilla.comment
+	local captured_start
+	local captured_end
+
+	postilla.setup({ keymap = keymap })
+	local normal_mapping = vim.fn.maparg(keymap, "n", false, true)
+	local visual_mapping = vim.fn.maparg(keymap, "x", false, true)
+	assert_true(normal_mapping.callback ~= nil, "Normal-mode comment mapping is missing")
+	assert_true(visual_mapping.callback ~= nil, "Visual-mode comment mapping is missing")
+
+	local bufnr = vim.api.nvim_get_current_buf()
+	vim.bo[bufnr].swapfile = false
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "one", "two", "three", "four" })
+	vim.bo[bufnr].modified = false
+	vim.api.nvim_win_set_cursor(0, { 2, 0 })
+	vim.cmd("normal! Vj")
+
+	postilla.comment = function(start_line, end_line)
+		captured_start = start_line
+		captured_end = end_line
+	end
+	visual_mapping.callback()
+	postilla.comment = original_comment
+	vim.api.nvim_feedkeys("\27", "nx", false)
+
+	assert_equal(2, captured_start)
+	assert_equal(3, captured_end)
+	assert_equal("two", vim.api.nvim_buf_get_lines(bufnr, 1, 2, false)[1])
+	assert_equal("three", vim.api.nvim_buf_get_lines(bufnr, 2, 3, false)[1])
+end)
+
+test("creates a range comment from the Visual-mode keymap", function()
+	local postilla = require("postilla")
+	local revdiff = require("postilla.revdiff")
+	local state = require("postilla.state")
+	local storage = require("postilla.storage")
+	local state_root = temporary_directory("postilla-visual-range-state")
+	local keymap = "<leader>rR"
+	local bufnr = vim.api.nvim_get_current_buf()
+
+	postilla.setup({ keymap = keymap, state_dir = state_root })
+	vim.bo[bufnr].swapfile = false
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "one", "two", "three", "four" })
+	vim.bo[bufnr].modified = false
+	vim.api.nvim_win_set_cursor(0, { 2, 0 })
+	vim.cmd("normal! Vj")
+	vim.fn.maparg(keymap, "x", false, true).callback()
+	vim.api.nvim_buf_set_lines(0, 0, -1, false, { "Review this range" })
+	vim.fn.maparg("<C-s>", "i", false, true).callback()
+
+	assert_equal(1, #state.comments)
+	assert_equal("range", state.comments[1].scope)
+	assert_equal(2, state.comments[1].start_line)
+	assert_equal(3, state.comments[1].end_line)
+	assert_equal("Review this range", state.comments[1].comment)
+	assert_equal("## [No Name]:2-3 ( )\nReview this range\n", revdiff.build(state.comments))
+	assert_equal("n", vim.api.nvim_get_mode().mode)
+	assert_equal("two", vim.api.nvim_buf_get_lines(bufnr, 1, 2, false)[1])
+	assert_equal("three", vim.api.nvim_buf_get_lines(bufnr, 2, 3, false)[1])
+
+	postilla.abort()
+	storage.setup()
+	vim.fn.delete(state_root, "rf")
+end)
+
+test("forwards an explicit Ex range to PostillaComment", function()
+	local postilla = require("postilla")
+	local original_comment = postilla.comment
+	local captured_start
+	local captured_end
+
+	vim.cmd("runtime plugin/postilla.lua")
+	postilla.comment = function(start_line, end_line)
+		captured_start = start_line
+		captured_end = end_line
+	end
+	vim.cmd("2,4PostillaComment")
+	postilla.comment = original_comment
+
+	assert_equal(2, captured_start)
+	assert_equal(4, captured_end)
 end)
 
 test("returns to Normal mode after saving a comment", function()
@@ -107,6 +242,35 @@ test("returns to Normal mode after saving a comment", function()
 	local restored_matches = vim.api.nvim_win_call(original_win, vim.fn.getmatches)
 	assert_equal(#original_matches, #restored_matches)
 	assert_equal("Please simplify this", saved_comment)
+end)
+
+test("shows and highlights the full range while writing a comment", function()
+	local ui = require("postilla.ui")
+	local original_win = vim.api.nvim_get_current_win()
+	local original_buf = vim.api.nvim_get_current_buf()
+	local original_matches = vim.api.nvim_win_call(original_win, vim.fn.getmatches)
+
+	vim.api.nvim_buf_set_lines(original_buf, 0, -1, false, { "one", "two", "three", "four" })
+	vim.bo[original_buf].modified = false
+	ui.open_comment_window({
+		file = "lua/example.lua",
+		line = 2,
+		start_line = 2,
+		end_line = 4,
+		bufnr = original_buf,
+	}, function() end)
+
+	local comment_win = vim.api.nvim_get_current_win()
+	assert_true(vim.wo[comment_win].winbar:find("lua/example.lua:2%-4") ~= nil, "range is missing from the winbar")
+	local highlighted_matches = vim.api.nvim_win_call(original_win, vim.fn.getmatches)
+	assert_equal(#original_matches + 1, #highlighted_matches)
+	assert_true(highlighted_matches[#highlighted_matches].pattern:find("%%>1l") ~= nil)
+	assert_true(highlighted_matches[#highlighted_matches].pattern:find("%%<5l") ~= nil)
+
+	local cancel_mapping = vim.fn.maparg("<Esc>", "n", false, true)
+	cancel_mapping.callback()
+	assert_equal(original_win, vim.api.nvim_get_current_win())
+	assert_equal(#original_matches, #vim.api.nvim_win_call(original_win, vim.fn.getmatches))
 end)
 
 test("supports the legacy floating comment editor layout", function()

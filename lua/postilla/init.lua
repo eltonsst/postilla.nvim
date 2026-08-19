@@ -24,6 +24,14 @@ local function next_comment_id()
 	return id
 end
 
+local function line_label(comment)
+	local first_line = comment.start_line or comment.line
+	if comment.end_line and comment.end_line > first_line then
+		return string.format("%d-%d", first_line, comment.end_line)
+	end
+	return tostring(first_line)
+end
+
 local function restore_extmark(comment)
 	local extmark_id = markers.place(comment, state.namespace)
 	if extmark_id then
@@ -44,10 +52,10 @@ local function add_comment(review_location, comment_text)
 		root = review_location.root,
 		file = review_location.file,
 		line = review_location.line,
-		start_line = review_location.line,
-		end_line = nil,
+		start_line = review_location.start_line or review_location.line,
+		end_line = review_location.end_line,
 		change_type = " ",
-		scope = "line",
+		scope = review_location.scope or "line",
 		target = review_location.target,
 		context_before = review_location.context_before,
 		context_after = review_location.context_after,
@@ -87,6 +95,11 @@ function M.setup(opts)
 
 	if config.keymap then
 		vim.keymap.set("n", config.keymap, M.comment, { desc = "Add Postilla comment" })
+		vim.keymap.set("x", config.keymap, function()
+			local anchor_line = vim.fn.line("v")
+			local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
+			M.comment(anchor_line, cursor_line)
+		end, { desc = "Add Postilla range comment" })
 	end
 end
 
@@ -108,16 +121,16 @@ function M.start()
 	vim.notify("Postilla session started", vim.log.levels.INFO)
 end
 
-function M.comment()
+function M.comment(start_line, end_line)
 	if not state.active then
 		M.start()
 	end
 
-	local review_location = location.capture(config.context_lines)
+	local review_location = location.capture(config.context_lines, start_line, end_line)
 	ui.open_comment_window(review_location, function(comment)
 		local stored = add_comment(review_location, comment)
 		vim.notify(
-			string.format("Stored review comment %s for %s:%d", stored.id, stored.file, stored.line),
+			string.format("Stored review comment %s for %s:%s", stored.id, stored.file, line_label(stored)),
 			vim.log.levels.INFO
 		)
 	end, nil, config.comment_window)
@@ -159,7 +172,7 @@ function M.status()
 	local latest = state.comments[#state.comments]
 
 	if latest then
-		message = message .. string.format("\nLatest: %s at %s:%d", latest.id, latest.file, latest.line)
+		message = message .. string.format("\nLatest: %s at %s:%s", latest.id, latest.file, line_label(latest))
 	end
 
 	vim.notify(message, vim.log.levels.INFO)
@@ -175,12 +188,13 @@ function M.list()
 
 	for _, comment in ipairs(state.comments) do
 		local first_line = vim.split(comment.comment, "\n", { plain = true })[1] or ""
+		local range = comment.end_line and string.format(" [%s]", line_label(comment)) or ""
 
 		table.insert(items, {
 			bufnr = comment.bufnr,
-			lnum = comment.line,
+			lnum = comment.start_line or comment.line,
 			col = 1,
-			text = string.format("%s: %s", comment.id, first_line),
+			text = string.format("%s%s: %s", comment.id, range, first_line),
 		})
 	end
 

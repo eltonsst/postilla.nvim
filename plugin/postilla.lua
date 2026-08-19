@@ -2,9 +2,13 @@ vim.api.nvim_create_user_command("PostillaStart", function()
 	require("postilla").start()
 end, {})
 
-vim.api.nvim_create_user_command("PostillaComment", function()
-	require("postilla").comment()
-end, {})
+vim.api.nvim_create_user_command("PostillaComment", function(opts)
+	if opts.range > 0 then
+		require("postilla").comment(opts.line1, opts.line2)
+	else
+		require("postilla").comment()
+	end
+end, { range = true })
 
 vim.api.nvim_create_user_command("PostillaDone", function()
 	require("postilla").done()

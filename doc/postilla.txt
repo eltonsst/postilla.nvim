@@ -77,7 +77,7 @@ context_lines~
 
                                                         *postilla-keymap*
 keymap~
-    Optional normal-mode mapping for :PostillaComment.
+    Optional Normal- and Visual-mode mapping for :PostillaComment.
 
                                                         *postilla-state_dir*
 state_dir~
@@ -99,9 +99,16 @@ COMMANDS                                          *postilla-commands*
 
                                                         *:PostillaComment*
 :PostillaComment~
-    Open a markdown scratch buffer for a review comment at the current cursor
-    line. By default it uses a bottom split so the reviewed code stays visible.
-    Press <C-s> to save or <Esc> in normal mode to cancel.
+    Open a markdown scratch buffer for a review comment at the current line or
+    selected range. By default it uses a bottom split so the reviewed code
+    stays visible. Press <C-s> to save or <Esc> in normal mode to cancel.
+
+    When the configured keymap is used in Visual mode, the comment is attached
+    to every selected line. Character and block selections expand to complete
+    lines. The command also accepts an explicit Ex range:
+>
+  :10,15PostillaComment
+<
 
                                                         *:PostillaDone*
 :PostillaDone~

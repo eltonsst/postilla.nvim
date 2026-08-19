@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+- Line-range comments through Visual-mode keymaps and Ex command ranges.
+- Range highlighting while writing and range locations in the comment editor.
+
 ## v0.2.0 - 2026-08-12
 
 Postilla rename, external state storage, and RevDiff output release.

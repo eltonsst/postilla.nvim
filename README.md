@@ -14,7 +14,7 @@ No pull request. No temporary notes. No files to add to `.gitignore`.
 
 ## Features
 
-- Add multiline comments to exact source lines.
+- Add multiline comments to exact lines or line ranges.
 - Write in a bottom split while the reviewed code stays visible.
 - See saved comments as virtual text in the source file.
 - List, edit, and delete comments before export.
@@ -52,6 +52,9 @@ Move the cursor to a line and add a comment:
 
 If you configured the example keymap, press `<leader>rc` instead.
 
+To comment on a range, select the lines in Visual mode and press `<leader>rc`.
+Character and block selections are expanded to complete lines.
+
 Write your comment in the bottom split:
 
 - `<C-s>` saves the comment and returns to the source file.
@@ -61,6 +64,7 @@ Repeat this for every line you want to review. Saved comments look like this:
 
 ```text
 💬 R1. Consider extracting this helper...
+💬 R2 [80-84]. This section is too long...
 ```
 
 Finish the review:
@@ -77,7 +81,7 @@ your coding agent and continue the conversation.
 | Command | Action |
 | --- | --- |
 | `:PostillaStart` | Start or restore a review |
-| `:PostillaComment` | Comment on the current line |
+| `:PostillaComment` | Comment on the current line or selected range |
 | `:PostillaList` | List comments in quickfix |
 | `:PostillaEdit R1` | Edit comment `R1` |
 | `:PostillaDelete R1` | Delete comment `R1` |
@@ -93,7 +97,7 @@ Postilla uses the revdiff annotation format:
 ## lua/postilla/init.lua:42 ( )
 Please simplify this branch.
 
-## README.md:80 ( )
+## README.md:80-84 ( )
 This section is too long. Keep it focused on new users.
 ```
 
@@ -118,7 +122,7 @@ require("postilla").setup({
 ```
 
 - `context_lines`: lines saved before and after the reviewed line.
-- `keymap`: Normal-mode shortcut for adding a comment.
+- `keymap`: shortcut for adding a line or Visual-range comment.
 - `state_dir`: custom directory for Postilla state.
 - `comment_window.layout`: use `"bottom"` or `"float"`.
 - `comment_window.height`: height of the bottom split or float.
@@ -160,8 +164,8 @@ available with `:help postilla`.
 
 ## Status
 
-Postilla is an experimental MVP. Today it creates line-level comments in
-regular files. Diff views and range comments are not available yet.
+Postilla is an experimental MVP. Today it creates line and range comments in
+regular files. Diff-view integrations are not available yet.
 
 ## License
 
