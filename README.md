@@ -16,7 +16,8 @@ No pull request. No temporary notes. No files to add to `.gitignore`.
 
 - Add multiline comments to exact lines or line ranges.
 - Write in a bottom split while the reviewed code stays visible.
-- See saved comments as virtual text in the source file.
+- Keep comments attached when code moves and warn when reviewed code changes.
+- Jump between comments and preview the final feedback inside Neovim.
 - List, edit, and delete comments before export.
 - Restore unfinished reviews after restarting Neovim.
 - Export [revdiff](https://github.com/umputun/revdiff)-compatible feedback.
@@ -30,6 +31,8 @@ With [lazy.nvim](https://github.com/folke/lazy.nvim):
   "eltonsst/postilla.nvim",
   opts = {
     keymap = "<leader>rc",
+    next_keymap = "]r",
+    previous_keymap = "[r",
   },
 }
 ```
@@ -67,6 +70,13 @@ Repeat this for every line you want to review. Saved comments look like this:
 💬 R2 [80-84]. This section is too long...
 ```
 
+Use `]r` and `[r` to move between comments with the example configuration.
+Preview the complete feedback without ending the session:
+
+```vim
+:PostillaPreview
+```
+
 Finish the review:
 
 ```vim
@@ -82,9 +92,12 @@ your coding agent and continue the conversation.
 | --- | --- |
 | `:PostillaStart` | Start or restore a review |
 | `:PostillaComment` | Comment on the current line or selected range |
+| `:PostillaNext` / `:PostillaPrev` | Jump between comments |
 | `:PostillaList` | List comments in quickfix |
 | `:PostillaEdit R1` | Edit comment `R1` |
 | `:PostillaDelete R1` | Delete comment `R1` |
+| `:PostillaPreview` | Preview feedback and jump to its comments |
+| `:PostillaExport` | Copy and save feedback without finishing |
 | `:PostillaStatus` | Show the current review status |
 | `:PostillaDone` | Copy the review and finish |
 | `:PostillaAbort` | Discard the current review |
@@ -112,7 +125,12 @@ These are the default options:
 require("postilla").setup({
   context_lines = 5,
   keymap = nil,
+  next_keymap = nil,
+  previous_keymap = nil,
   state_dir = nil,
+  marker = {
+    style = "virtual_line",
+  },
   comment_window = {
     layout = "bottom",
     height = 10,
@@ -123,7 +141,9 @@ require("postilla").setup({
 
 - `context_lines`: lines saved before and after the reviewed line.
 - `keymap`: shortcut for adding a line or Visual-range comment.
+- `next_keymap` and `previous_keymap`: optional navigation shortcuts.
 - `state_dir`: custom directory for Postilla state.
+- `marker.style`: use `"virtual_line"` or `"eol"`.
 - `comment_window.layout`: use `"bottom"` or `"float"`.
 - `comment_window.height`: height of the bottom split or float.
 - `comment_window.width`: width of the float.
@@ -147,7 +167,9 @@ stdpath("state")/postilla/projects/
 ```
 
 If Neovim closes, reopen the project and run `:PostillaStart`. Your comments
-and markers will be restored.
+and markers will be restored. Postilla relocates comments when their exact code
+moves. If the reviewed code changed or became ambiguous, it marks the comment
+with `⚠` and blocks export until you delete and recreate that comment.
 
 Users upgrading from `local-review.nvim` only need to use
 `eltonsst/postilla.nvim`, `require("postilla")`, and the `Postilla*` commands.
@@ -164,8 +186,8 @@ available with `:help postilla`.
 
 ## Status
 
-Postilla is an experimental MVP. Today it creates line and range comments in
-regular files. Diff-view integrations are not available yet.
+Postilla focuses on one job: reviewing agent changes in regular Neovim buffers
+and returning precise feedback. It is not a diff or merge tool.
 
 ## License
 

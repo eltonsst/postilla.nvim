@@ -1,6 +1,6 @@
 local M = {}
 
-function M.format_virt_text(id, comment_text, start_line, end_line)
+function M.format_virt_text(id, comment_text, start_line, end_line, stale)
 	local lines = vim.split(comment_text, "\n", { plain = true })
 	local first_line = vim.trim(lines[1] or "")
 
@@ -26,34 +26,49 @@ function M.format_virt_text(id, comment_text, start_line, end_line)
 		range = string.format(" [%d-%d]", start_line, end_line)
 	end
 
-	return "💬 " .. id .. range .. ". " .. preview
+	local icon = stale and "⚠" or "💬"
+	return icon .. " " .. id .. range .. ". " .. preview
 end
 
-function M.place(comment, namespace)
+function M.place(comment, namespace, options)
 	if not comment.bufnr or not vim.api.nvim_buf_is_valid(comment.bufnr) then
 		return nil
 	end
 
 	local line_count = vim.api.nvim_buf_line_count(comment.bufnr)
 	local marker_line = math.min(math.max(comment.end_line or comment.start_line or comment.line, 1), line_count)
-	local virt_text_label =
-		M.format_virt_text(comment.id, comment.comment, comment.start_line or comment.line, comment.end_line)
+	local virt_text_label = M.format_virt_text(
+		comment.id,
+		comment.comment,
+		comment.start_line or comment.line,
+		comment.end_line,
+		comment.stale
+	)
+	local highlight = comment.stale and "DiagnosticWarn" or "DiagnosticInfo"
+	local style = options and options.style or "eol"
+	if style == "virtual_line" then
+		return vim.api.nvim_buf_set_extmark(comment.bufnr, namespace, marker_line - 1, 0, {
+			virt_lines = { { { "  └─ " .. virt_text_label, highlight } } },
+			virt_lines_above = false,
+		})
+	end
 
 	return vim.api.nvim_buf_set_extmark(comment.bufnr, namespace, marker_line - 1, 0, {
-		virt_text = { { virt_text_label, "DiagnosticInfo" } },
+		virt_text = { { virt_text_label, highlight } },
 		virt_text_pos = "eol",
 	})
 end
 
 function M.delete(comment, namespace)
-	if comment.bufnr and vim.api.nvim_buf_is_valid(comment.bufnr) then
-		vim.api.nvim_buf_del_extmark(comment.bufnr, namespace, comment.extmark_id)
+	if comment.bufnr and comment.extmark_id and vim.api.nvim_buf_is_valid(comment.bufnr) then
+		pcall(vim.api.nvim_buf_del_extmark, comment.bufnr, namespace, comment.extmark_id)
 	end
+	comment.extmark_id = nil
 end
 
-function M.refresh(comment, namespace)
+function M.refresh(comment, namespace, options)
 	M.delete(comment, namespace)
-	comment.extmark_id = M.place(comment, namespace)
+	comment.extmark_id = M.place(comment, namespace, options)
 end
 
 return M

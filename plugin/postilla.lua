@@ -14,6 +14,14 @@ vim.api.nvim_create_user_command("PostillaDone", function()
 	require("postilla").done()
 end, {})
 
+vim.api.nvim_create_user_command("PostillaExport", function()
+	require("postilla").export()
+end, {})
+
+vim.api.nvim_create_user_command("PostillaPreview", function()
+	require("postilla").preview()
+end, {})
+
 vim.api.nvim_create_user_command("PostillaAbort", function()
 	require("postilla").abort()
 end, {})
@@ -24,6 +32,14 @@ end, {})
 
 vim.api.nvim_create_user_command("PostillaList", function()
 	require("postilla").list()
+end, {})
+
+vim.api.nvim_create_user_command("PostillaNext", function()
+	require("postilla").next()
+end, {})
+
+vim.api.nvim_create_user_command("PostillaPrev", function()
+	require("postilla").previous()
 end, {})
 
 vim.api.nvim_create_user_command("PostillaDelete", function(opts)

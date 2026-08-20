@@ -52,6 +52,8 @@ With lazy.nvim:
     config = function()
       require("postilla").setup({
         keymap = "<leader>rc",
+        next_keymap = "]r",
+        previous_keymap = "[r",
       })
     end,
   }
@@ -61,7 +63,12 @@ Default configuration:
   require("postilla").setup({
     context_lines = 5,
     keymap = nil,
+    next_keymap = nil,
+    previous_keymap = nil,
     state_dir = nil,
+    marker = {
+      style = "virtual_line",
+    },
     comment_window = {
       layout = "bottom",
       height = 10,
@@ -79,9 +86,22 @@ context_lines~
 keymap~
     Optional Normal- and Visual-mode mapping for :PostillaComment.
 
+						*postilla-next_keymap*
+next_keymap~
+    Optional Normal-mode mapping for :PostillaNext.
+
+						*postilla-previous_keymap*
+previous_keymap~
+    Optional Normal-mode mapping for :PostillaPrev.
+
                                                         *postilla-state_dir*
 state_dir~
     Optional override for Postilla's Neovim state directory.
+
+						*postilla-marker*
+marker~
+    Configures saved comment markers. style accepts "virtual_line" (the
+    default) or "eol".
 
 						*postilla-comment_window*
 comment_window~
@@ -116,6 +136,16 @@ COMMANDS                                          *postilla-commands*
     a backup below Neovim's state directory, clear markers, and remove the
     session backup.
 
+						*:PostillaExport*
+:PostillaExport~
+    Generate, copy, and save the same output as :PostillaDone, but keep the
+    active review and its comments.
+
+						*:PostillaPreview*
+:PostillaPreview~
+    Open the generated feedback in a bottom split. Press <CR> on a record to
+    jump to its source, <C-s> to copy the output, or q to close the preview.
+
                                                         *:PostillaAbort*
 :PostillaAbort~
     Clear the current review session and remove its backup without generating
@@ -130,6 +160,14 @@ COMMANDS                                          *postilla-commands*
 :PostillaList~
     Populate and open the quickfix list with one item per stored review
     comment.
+
+						*:PostillaNext*
+:PostillaNext~
+    Jump to the next review comment in file and line order. Wraps at the end.
+
+						*:PostillaPrev*
+:PostillaPrev~
+    Jump to the previous review comment. Wraps at the beginning.
 
                                                         *:PostillaEdit*
 :PostillaEdit {id}~
@@ -151,7 +189,7 @@ Typical flow:
 >
   :PostillaStart
   :PostillaComment
-  :PostillaList
+  :PostillaPreview
   :PostillaDone
 <
 The generated output uses RevDiff record headers. Comments on normal working
@@ -160,6 +198,12 @@ buffers are emitted as context annotations:
   ## lua/postilla/init.lua:42 ( )
   Please simplify this branch.
 <
+
+Postilla uses extmarks while Neovim is open, so comments follow inserted and
+deleted lines. Restored sessions locate the exact reviewed text again and use
+its saved context to resolve duplicates. A warning marker means that the text
+changed or its location is ambiguous. Preview and export are blocked until the
+stale comment is deleted and recreated.
 
 ==============================================================================
 HEALTHCHECK                                       *postilla-health*

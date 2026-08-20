@@ -50,7 +50,14 @@ local function open_bottom_split(bufnr, location, options)
 	vim.api.nvim_win_set_buf(winid, bufnr)
 	vim.api.nvim_win_set_height(winid, height)
 	vim.wo[winid].winfixheight = true
-	vim.wo[winid].winbar = vim.fn.escape(string.format(" Postilla · %s ", location_label(location)), "%")
+	vim.wo[winid].winbar = vim.fn.escape(
+		string.format(
+			" Postilla · %s · %d saved · <C-s> save · <Esc> cancel ",
+			location_label(location),
+			options.comment_count or 0
+		),
+		"%"
+	)
 
 	return winid
 end
@@ -157,6 +164,47 @@ function M.open_comment_window(location, on_confirm, initial_text, options)
 
 	vim.api.nvim_win_set_cursor(winid, { vim.api.nvim_buf_line_count(bufnr), 0 })
 	vim.cmd.startinsert()
+end
+
+function M.open_preview(output, line_map, on_copy, on_jump)
+	local source_winid = vim.api.nvim_get_current_win()
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	vim.bo[bufnr].buftype = "nofile"
+	vim.bo[bufnr].bufhidden = "wipe"
+	vim.bo[bufnr].swapfile = false
+	vim.bo[bufnr].filetype = "markdown"
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, vim.split(output, "\n", { plain = true }))
+	vim.bo[bufnr].modifiable = false
+	vim.bo[bufnr].readonly = true
+
+	local height = math.min(20, math.max(8, math.floor(vim.o.lines * 0.45)))
+	vim.cmd(string.format("botright %dsplit", height))
+	local winid = vim.api.nvim_get_current_win()
+	vim.api.nvim_win_set_buf(winid, bufnr)
+	vim.wo[winid].wrap = true
+	vim.wo[winid].linebreak = true
+	vim.wo[winid].winfixheight = true
+	vim.wo[winid].winbar = " Postilla Preview · <C-s> copy · <CR> jump · q close "
+
+	local function close_preview()
+		if vim.api.nvim_win_is_valid(winid) then
+			vim.api.nvim_win_close(winid, true)
+		end
+		if vim.api.nvim_win_is_valid(source_winid) then
+			vim.api.nvim_set_current_win(source_winid)
+		end
+	end
+
+	vim.keymap.set("n", "q", close_preview, { buffer = bufnr, nowait = true, desc = "Close Postilla preview" })
+	vim.keymap.set("n", "<Esc>", close_preview, { buffer = bufnr, nowait = true, desc = "Close Postilla preview" })
+	vim.keymap.set("n", "<C-s>", on_copy, { buffer = bufnr, nowait = true, desc = "Copy Postilla review" })
+	vim.keymap.set("n", "<CR>", function()
+		local comment = line_map[vim.api.nvim_win_get_cursor(winid)[1]]
+		if comment then
+			close_preview()
+			on_jump(comment)
+		end
+	end, { buffer = bufnr, nowait = true, desc = "Jump to Postilla comment" })
 end
 
 return M

@@ -20,6 +20,7 @@ function M.serializable_comments(comments)
 			change_type = comment.change_type or " ",
 			scope = comment.scope or "line",
 			target = comment.target,
+			fingerprint = comment.fingerprint,
 			context_before = comment.context_before,
 			context_after = comment.context_after,
 			comment = comment.comment,
@@ -36,7 +37,7 @@ function M.save(state)
 
 	local path = M.path(state.root)
 	local data = {
-		version = 2,
+		version = 3,
 		root = state.root,
 		next_id = state.next_id,
 		comments = M.serializable_comments(state.comments),
@@ -114,6 +115,7 @@ function M.load(root, state, restore_extmark)
 			change_type = saved_comment.change_type or " ",
 			scope = saved_comment.scope or "line",
 			target = saved_comment.target,
+			fingerprint = saved_comment.fingerprint,
 			context_before = saved_comment.context_before or {},
 			context_after = saved_comment.context_after or {},
 			comment = saved_comment.comment or "",

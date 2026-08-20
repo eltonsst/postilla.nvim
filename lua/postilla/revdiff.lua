@@ -74,19 +74,32 @@ local function header(comment)
 	return string.format("## %s:%d (%s)", comment.file, first_line, change_type)
 end
 
-function M.build(comments)
+function M.build_index(comments)
 	local records = {}
+	local line_map = {}
+	local output_line = 1
 
 	for _, item in ipairs(sorted_comments(comments)) do
 		local comment = item.comment
-		table.insert(records, string.format("%s\n%s", header(comment), escape_header_lines(comment.comment)))
+		local record = string.format("%s\n%s", header(comment), escape_header_lines(comment.comment))
+		local record_lines = vim.split(record, "\n", { plain = true })
+		for offset = 0, #record_lines - 1 do
+			line_map[output_line + offset] = comment
+		end
+		output_line = output_line + #record_lines + 1
+		table.insert(records, record)
 	end
 
 	if #records == 0 then
-		return ""
+		return "", line_map
 	end
 
-	return table.concat(records, "\n\n") .. "\n"
+	return table.concat(records, "\n\n") .. "\n", line_map
+end
+
+function M.build(comments)
+	local output = M.build_index(comments)
+	return output
 end
 
 function M.save(review_output, root)

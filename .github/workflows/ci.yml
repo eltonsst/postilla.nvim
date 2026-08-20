@@ -40,8 +40,6 @@ jobs:
             +'helptags doc' \
             +'help postilla' \
             +'checkhealth postilla' \
-            +'PostillaStart' \
-            +'PostillaStatus' \
-            +'PostillaAbort' \
+            +'lua for _, command in ipairs({ "PostillaStart", "PostillaStatus", "PostillaNext", "PostillaPrev", "PostillaPreview", "PostillaExport", "PostillaAbort" }) do vim.cmd(command) end' \
             +qa
           test ! -e .local-review

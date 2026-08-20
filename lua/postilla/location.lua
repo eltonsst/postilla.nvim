@@ -1,4 +1,5 @@
 local paths = require("postilla.paths")
+local anchors = require("postilla.anchors")
 
 local M = {}
 
@@ -35,6 +36,7 @@ function M.capture(context_lines, start_line, end_line)
 		end_line = is_range and last_line or nil,
 		scope = is_range and "range" or "line",
 		target = table.concat(target_lines, "\n"),
+		fingerprint = anchors.fingerprint(table.concat(target_lines, "\n")),
 		context_before = context_before,
 		context_after = context_after,
 	}

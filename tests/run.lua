@@ -47,6 +47,109 @@ test("includes the selected range in virtual text", function()
 	assert_equal("💬 R3 [4-7]. Review this block", label)
 end)
 
+test("marks stale review comments in virtual text", function()
+	local markers = require("postilla.markers")
+	local label = markers.format_virt_text("R4", "Original code changed", 8, nil, true)
+
+	assert_equal("⚠ R4. Original code changed", label)
+end)
+
+test("tracks line ranges as the buffer changes", function()
+	local anchors = require("postilla.anchors")
+	local namespace = vim.api.nvim_create_namespace("postilla-anchor-movement-test")
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "one", "two", "three", "four" })
+	local comment = {
+		bufnr = bufnr,
+		line = 2,
+		start_line = 2,
+		end_line = 3,
+		scope = "range",
+	}
+
+	anchors.place(comment, namespace)
+	vim.api.nvim_buf_set_lines(bufnr, 0, 0, false, { "inserted" })
+	assert_true(anchors.sync(comment, namespace))
+	assert_equal(3, comment.start_line)
+	assert_equal(4, comment.end_line)
+end)
+
+test("marks active comments stale when reviewed text changes", function()
+	local anchors = require("postilla.anchors")
+	local namespace = vim.api.nvim_create_namespace("postilla-active-stale-test")
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "one", "review me", "three" })
+	local comment = {
+		bufnr = bufnr,
+		line = 2,
+		start_line = 2,
+		target = "review me",
+		fingerprint = anchors.fingerprint("review me"),
+	}
+
+	anchors.place(comment, namespace)
+	vim.api.nvim_buf_set_lines(bufnr, 1, 2, false, { "changed" })
+	assert_true(anchors.sync(comment, namespace))
+	assert_true(comment.stale)
+	assert_equal("reviewed text changed", comment.stale_reason)
+
+	vim.api.nvim_buf_delete(bufnr, { force = true })
+end)
+
+test("relocates saved comments when their target moved", function()
+	local anchors = require("postilla.anchors")
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "intro", "before", "target one", "target two", "after" })
+	local comment = {
+		bufnr = bufnr,
+		line = 1,
+		start_line = 1,
+		end_line = 2,
+		target = "target one\ntarget two",
+		context_before = { "before" },
+		context_after = { "after" },
+	}
+
+	assert_true(anchors.resolve(comment))
+	assert_equal(3, comment.start_line)
+	assert_equal(4, comment.end_line)
+	assert_true(comment.relocated)
+	assert_true(not comment.stale)
+end)
+
+test("marks saved comments stale when their target cannot be resolved", function()
+	local anchors = require("postilla.anchors")
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "new code" })
+	local comment = {
+		bufnr = bufnr,
+		line = 1,
+		start_line = 1,
+		target = "old code",
+	}
+
+	assert_true(not anchors.resolve(comment))
+	assert_true(comment.stale)
+	assert_equal("reviewed text changed", comment.stale_reason)
+end)
+
+test("navigates through comments in file and line order", function()
+	local navigation = require("postilla.navigation")
+	local comments = {
+		{ id = "R3", file = "z.lua", bufnr = 3, start_line = 2 },
+		{ id = "R2", file = "a.lua", bufnr = 2, start_line = 8 },
+		{ id = "R1", file = "a.lua", bufnr = 2, start_line = 3, end_line = 5 },
+	}
+
+	local next_comment = navigation.pick(comments, { bufnr = 2, file = "a.lua", line = 4 }, 1)
+	local previous_comment = navigation.pick(comments, { bufnr = 2, file = "a.lua", line = 4 }, -1)
+	local wrapped_comment = navigation.pick(comments, { id = "R3", bufnr = 3, file = "z.lua", line = 2 }, 1)
+
+	assert_equal("R2", next_comment.id)
+	assert_equal("R3", previous_comment.id)
+	assert_equal("R1", wrapped_comment.id)
+end)
+
 test("refreshes an existing marker in place", function()
 	local markers = require("postilla.markers")
 	local namespace = vim.api.nvim_create_namespace("postilla-test")
@@ -89,6 +192,20 @@ test("places a range comment marker on the final selected line", function()
 	assert_equal(1, #extmarks)
 	assert_equal(3, extmarks[1][2])
 	assert_equal("💬 R1 [2-4]. Review this block", extmarks[1][4].virt_text[1][1])
+end)
+
+test("renders comments below the source with virtual-line markers", function()
+	local markers = require("postilla.markers")
+	local namespace = vim.api.nvim_create_namespace("postilla-virtual-line-marker-test")
+	local bufnr = vim.api.nvim_create_buf(false, true)
+	vim.api.nvim_buf_set_lines(bufnr, 0, -1, false, { "target" })
+
+	markers.place({ id = "R1", bufnr = bufnr, line = 1, comment = "Review this" }, namespace, {
+		style = "virtual_line",
+	})
+
+	local extmarks = vim.api.nvim_buf_get_extmarks(bufnr, namespace, 0, -1, { details = true })
+	assert_equal("  └─ 💬 R1. Review this", extmarks[1][4].virt_lines[1][1][1])
 end)
 
 test("captures a normalized line range with surrounding context", function()
@@ -174,6 +291,9 @@ test("creates a range comment from the Visual-mode keymap", function()
 	assert_equal("n", vim.api.nvim_get_mode().mode)
 	assert_equal("two", vim.api.nvim_buf_get_lines(bufnr, 1, 2, false)[1])
 	assert_equal("three", vim.api.nvim_buf_get_lines(bufnr, 2, 3, false)[1])
+	assert_true(postilla.export())
+	assert_equal(1, #state.comments)
+	assert_true(state.active, "export should keep the review session active")
 
 	postilla.abort()
 	storage.setup()
@@ -291,6 +411,33 @@ test("supports the legacy floating comment editor layout", function()
 	assert_equal(original_win, vim.api.nvim_get_current_win())
 end)
 
+test("previews review output and jumps from a record", function()
+	local ui = require("postilla.ui")
+	local original_win = vim.api.nvim_get_current_win()
+	local copied = false
+	local jumped
+	local comment = { id = "R1", file = "lua/example.lua", line = 10 }
+
+	ui.open_preview("## lua/example.lua:10 ( )\nPlease simplify this\n", {
+		[1] = comment,
+		[2] = comment,
+	}, function()
+		copied = true
+	end, function(selected)
+		jumped = selected
+	end)
+
+	local preview_buf = vim.api.nvim_get_current_buf()
+	vim.fn.maparg("<C-s>", "n", false, true).callback()
+	assert_true(copied)
+
+	vim.api.nvim_win_set_cursor(0, { 2, 0 })
+	vim.fn.maparg("<CR>", "n", false, true).callback()
+	assert_equal(comment, jumped)
+	assert_equal(original_win, vim.api.nvim_get_current_win())
+	assert_true(not vim.api.nvim_buf_is_valid(preview_buf), "preview buffer should be wiped")
+end)
+
 test("builds a RevDiff context annotation from a line comment", function()
 	local revdiff = require("postilla.revdiff")
 	local rendered = revdiff.build({
@@ -340,6 +487,20 @@ test("sorts RevDiff records and formats file, line, and range annotations", func
 			.. "Keep this validation.\n",
 		rendered
 	)
+end)
+
+test("maps preview lines back to their RevDiff comments", function()
+	local revdiff = require("postilla.revdiff")
+	local first = { id = "R1", file = "alpha.lua", line = 2, comment = "First\nSecond" }
+	local second = { id = "R2", file = "zeta.lua", line = 8, comment = "Third" }
+	local rendered, line_map = revdiff.build_index({ second, first })
+
+	assert_equal("## alpha.lua:2 ( )\nFirst\nSecond\n\n## zeta.lua:8 ( )\nThird\n", rendered)
+	assert_equal(first, line_map[1])
+	assert_equal(first, line_map[3])
+	assert_equal(nil, line_map[4])
+	assert_equal(second, line_map[5])
+	assert_equal(second, line_map[6])
 end)
 
 test("preserves multiline markdown and escapes RevDiff-like body headers", function()

@@ -6,6 +6,16 @@
 
 - Line-range comments through Visual-mode keymaps and Ex command ranges.
 - Range highlighting while writing and range locations in the comment editor.
+- Extmark anchors that follow edited buffers and relocate restored comments.
+- Stale comment detection with warning markers and safe export blocking.
+- Next and previous comment navigation with optional keymaps.
+- Review preview with source jumps and non-destructive export.
+- Virtual-line markers and clearer comment-editor controls.
+
+### Changed
+
+- `:PostillaDone` remains the finishing action; `:PostillaExport` now copies
+  and saves feedback without clearing the active session.
 
 ## v0.2.0 - 2026-08-12
 
